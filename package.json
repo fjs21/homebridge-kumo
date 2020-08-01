@@ -1,9 +1,9 @@
 {
   "private": true,
   "displayName": "Plugin Name",
-  "name": "homebridge-plugin-name",
-  "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
+  "name": "homebridge-kumo",
+  "version": "0.0.1",
+  "description": "Connect to devices on Kumo cloud.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
