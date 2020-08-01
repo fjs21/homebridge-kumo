@@ -1,7 +1,7 @@
 {
   "private": true,
   "displayName": "homebridge-kumo",
-  "name": "fjs21/homebridge-kumo",
+  "name": "homebridge-kumo",
   "version": "0.0.1",
   "description": "Connect to devices on Kumo cloud.",
   "license": "Apache-2.0",
