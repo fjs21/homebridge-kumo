@@ -4,13 +4,17 @@
   "singular": true,
   "schema": {
     "type": "object",
-    "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "required": true,
-        "default": "Example Dynamic Platform"
-      }
+    "properties": { 
+        "username": {
+            "title": "UserName",
+            "type": "string",
+            "required": true
+        },
+        "password": {
+            "title": "Password",
+            "type": "string",
+            "required": true
+        }
     }
   }
 }
