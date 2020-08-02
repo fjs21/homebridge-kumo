@@ -14,7 +14,7 @@ export const KUMO_DEVICE_UPDATES_URL = 'https://geo-c.kumocloud.com/getDeviceUpd
 
 export const KUMO_DEVICE_INFREQUENT_UPDATES_URL = 'https://geo-c.kumocloud.com/getInfrequentDeviceUpdates';
 
-export const KUMO_DEVICE_EXECUTE_URL = 'https://geo-c.kumocloud.com/sendDeviceCommands/v2'
+export const KUMO_DEVICE_EXECUTE_URL = 'https://geo-c.kumocloud.com/sendDeviceCommands/v2';
 
 export const KUMO_API_TOKEN_REFRESH_INTERVAL = 20;
 

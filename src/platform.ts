@@ -1,6 +1,6 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { KumoApi, KumoDevice } from "./kumo-api";
+import { KumoApi } from './kumo-api';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
 import { KumoPlatformAccessory } from './platformAccessory';
@@ -22,7 +22,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
   constructor(
     public readonly log: Logger,
     public readonly config: PlatformConfig,
-    public readonly api: API
+    public readonly api: API,
   ) {
     // initializing login information
     this.log = log;
@@ -63,7 +63,10 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
   async discoverDevices() {
 
     const flag = await this.kumo.acquireSecurityToken();
- 
+    if(!flag){
+      this.log.info('Failed to login.');
+    }
+
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of this.kumo.devices) {
       // generate a unique id for the accessory this should be generated from
@@ -96,7 +99,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
-        accessory.context.serial = device.serial
+        accessory.context.serial = device.serial;
         accessory.context.device = await this.kumo.queryDevice(this.log, device.serial);
 
         // create the accessory handler for the newly create accessory
