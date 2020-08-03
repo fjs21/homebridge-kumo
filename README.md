@@ -32,9 +32,9 @@ If you have these devices and would like to contribute, please open an [issue](h
 ## Installation
 If you are new to Homebridge, please first read the [Homebridge](https://homebridge.io) [documentation](https://github.com/homebridge/homebridge/wiki) and installation instructions before proceeding.
 
-If you have installed the [Homebridge Config UI](https://github.com/oznu/homebridge-config-ui-x), you can intall this plugin by going to the `Plugins` tab and searching for `homebridge-myq2` and installing it.
+If you have installed the [Homebridge Config UI](https://github.com/oznu/homebridge-config-ui-x), you can intall this plugin by going to the `Plugins` tab and searching for `homebridge-kumo` and installing it.
 
-If you prefer to install `homebridge-myq2` from the command line, you can do so by executing:
+If you prefer to install `homebridge-kumo` from the command line, you can do so by executing:
 
 ```sh
 sudo npm install -g homebridge-kumo
