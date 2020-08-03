@@ -1,8 +1,6 @@
-
 <p align="center">
-
-<img src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png" width="150">
-
+<img src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png" width="150"><br/>
+<img src="https://www.mitsubishicomfort.com/sites/default/themes/mitsubishicomfort/_assets/images/logo.png" width="150">
 </p>
 
 
