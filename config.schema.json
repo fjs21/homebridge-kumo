@@ -1,0 +1,20 @@
+{
+  "pluginAlias": "Kumo",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+        "username": {
+            "title": "UserName",
+            "type": "string",
+            "required": true
+        },
+        "password": {
+            "title": "Password",
+            "type": "string",
+            "required": true
+        }
+    }
+  }
+}
