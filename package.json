@@ -1,8 +1,8 @@
 {
-  "private": true,
+  "private": false,
   "displayName": "homebridge-kumo",
   "name": "homebridge-kumo",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "description": "Connect to devices on Kumo cloud.",
   "license": "Apache-2.0",
   "repository": {
@@ -26,7 +26,9 @@
   "keywords": [
     "homebridge-plugin"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "node-fetch": "^2.6.0"
+  },
   "devDependencies": {
     "@types/node": "^14.0.14",
     "@typescript-eslint/eslint-plugin": "^3.4.0",
@@ -37,6 +39,7 @@
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.5",
-    "node-fetch": "2.6.0"
-  }
+    "node-fetch": "^2.6.0"
+  },
+  "repository": "github:fjs21/homebridge-kumo"
 }
