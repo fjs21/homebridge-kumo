@@ -12,14 +12,11 @@ This plugin is based of the template Homebridge platform plugin.
 
 [![Downloads](https://badgen.net/npm/dt/homebridge-kumo)](https://www.npmjs.com/package/homebridge-kumo)
 [![Version](https://badgen.net/npm/v/homebridge-kumo)](https://www.npmjs.com/package/homebridge-kumo)
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 [![GitHub issues](https://img.shields.io/github/issues/fjs21/homebridge-kumo)](https://github.com/fjs21/homebridge-kumo/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/fjs21/homebridge-kumo)](https://github.com/fjs21/homebridge-kumo/pulls)
 
 ## Kumo device support for [Homebridge](https://homebridge.io).
-</SPAN>
-
 `homebridge-kumo` is a [Homebridge](https://homebridge.io) plugin that makes Kumo-enabled devices available to [Apple's](https://www.apple.com) [HomeKit](https://www.apple.com/ios/home) smart home platform. Kumo-enabled devices include Mistubishi Minisplit units.
 
 ## Why use this plugin for myQ support in HomeKit?
