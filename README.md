@@ -14,7 +14,7 @@
 ## Kumo device support for [Homebridge](https://homebridge.io).
 `homebridge-kumo` is a [Homebridge](https://homebridge.io) plugin that makes Kumo-enabled devices available to [Apple's](https://www.apple.com) [HomeKit](https://www.apple.com/ios/home) smart home platform. This plugin enables control of Mitsubishi's [kumo cloud](https://www.mitsubishicomfort.com/kumocloud) and currently supports Minisplit units via the offical WiFi accesory.
 
-## Why use this plugin for myQ support in HomeKit?
+## Why use this plugin for Kumo cloud support in HomeKit?
 In a similar vein to `homebridge-myq2`, this plugin aims to keep user configuration to a minimum. This plugin with dynamically add (but not yet remove) devices found in you Kumo account. This way the only conifiguration needed is your username and password for the Kumo cloud.
 
 ### Features
