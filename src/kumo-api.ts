@@ -102,7 +102,7 @@ export class KumoApi {
 
     // get security token
     const data = await response.json();
-    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
+    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 5 }));
 
     // What we should get back upon successfully calling /Login is a security token for
     // use in future API calls this session.
@@ -123,6 +123,7 @@ export class KumoApi {
         const device = {
           serial: serial,
           label: zoneTable[serial].label,
+          zoneTable: zoneTable[serial],
         };
         this.devices.push(device);
       }  
