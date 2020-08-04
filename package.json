@@ -2,13 +2,10 @@
   "private": false,
   "displayName": "homebridge-kumo",
   "name": "homebridge-kumo",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Connect to devices on Kumo cloud.",
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/fjs21/homebridge-kumo.git"
-  },
+  "repository": "github:fjs21/homebridge-kumo",
   "bugs": {
     "url": "https://github.com/fjs21/homebridge-kumo/issues"
   },
@@ -38,8 +35,6 @@
     "nodemon": "^2.0.4",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
-    "typescript": "^3.9.5",
-    "node-fetch": "^2.6.0"
-  },
-  "repository": "github:fjs21/homebridge-kumo"
+    "typescript": "^3.9.5"
+  }
 }
