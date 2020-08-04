@@ -2,10 +2,13 @@
   "private": false,
   "displayName": "homebridge-kumo",
   "name": "homebridge-kumo",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Connect to devices on Kumo cloud.",
   "license": "Apache-2.0",
   "repository": "github:fjs21/homebridge-kumo",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "bugs": {
     "url": "https://github.com/fjs21/homebridge-kumo/issues"
   },
