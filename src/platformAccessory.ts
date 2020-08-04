@@ -107,8 +107,6 @@ export class KumoPlatformAccessory {
 
   // handlers
   async handleActiveGet(callback) {
-    if(!await this.updateDevice()) {
-      //abort update
     // find currentValue
     let currentValue;
     currentValue = this.HeaterCooler.getCharacteristic(this.platform.Characteristic.Active).value;
