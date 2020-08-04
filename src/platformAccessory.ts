@@ -237,7 +237,7 @@ export class KumoPlatformAccessory {
 
     if(await this.updateDevice()) {
       // set this to a valid value for CurrentTemperature
-      const currentValue = this.accessory.context.device.sp_cool;
+      currentValue = this.accessory.context.device.sp_cool;
       this.platform.log.debug('Triggered GET TargetHeaterCoolingThresholdTemperature:', currentValue);
     }
 
