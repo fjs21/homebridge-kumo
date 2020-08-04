@@ -255,22 +255,34 @@ export class KumoPlatformAccessory {
   }
 
   handleTargetHeaterCoolingThresholdTemperatureSet(value, callback) {
-    this.platform.log.debug('Triggered SET TargetHeaterCoolingThresholdTemperature:', value);
-
+    const minCoolSetpoint: number = this.accessory.context.zoneTable.minCoolSetpoint;
+    
+    if(value<minCoolSetpoint) {
+      value = minCoolSetpoint;
+      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, minCoolSetpoint);
+    }
+    
     const command: Record<string, unknown> = {'spCool':value};
     
     this.platform.kumo.execute(this.accessory.context.serial, command);
     this.lastupdate = Date.now();
+    this.platform.log.debug('Triggered SET TargetHeaterCoolingThresholdTemperature:', value);
     callback(null);
   }  
 
   handleTargetHeaterHeatingThresholdTemperatureSet(value, callback) {
-    this.platform.log.debug('Triggered SET TargetHeaterHeatingThresholdTemperature:', value);
+    const maxHeatSetpoint: number = this.accessory.context.zoneTable.maxHeatSetpoint;
+
+    if(value>maxHeatSetpoint) {
+      value = maxHeatSetpoint;
+      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, maxHeatSetpoint);
+    }
 
     const command: Record<string, unknown> = {'spHeat':value};
     
     this.platform.kumo.execute(this.accessory.context.serial, command);
     this.lastupdate = Date.now();
+    this.platform.log.debug('Triggered SET TargetHeaterHeatingThresholdTemperature:', value);
     callback(null);
   }  
 
