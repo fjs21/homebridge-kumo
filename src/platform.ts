@@ -27,7 +27,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     // initializing login information
     this.log = log;
 
-    // Initialize our connection to the myQ API.
+    // Initialize our connection to the Kumo API.
     this.kumo = new KumoApi(this.log, config.username, config.password);
 
     this.log.debug('Finished initializing platform:', this.config.name);
