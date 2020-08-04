@@ -138,11 +138,13 @@ export class KumoPlatformAccessory {
 
   // Handle requests to set the "Active" characteristic
   handleActiveSet(value, callback) {
+    const value_old: number = <number>this.HeaterCooler.getCharacteristic(this.platform.Characteristic.Active).value;
+
     let command: Record<string, unknown> | undefined;
-    if(value === 0) {
+    if(value === 0 && value_old === 1) {
       // turn ON fan mode
       command = {'operationMode':7};
-    } else if(value === 1) {
+    } else if(value === 1 && value_old === 0) {
       // turn ON auto mode
       command = {'power':1, 'operationMode':8};
     }
@@ -262,7 +264,7 @@ export class KumoPlatformAccessory {
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, minCoolSetpoint);
     }
     
-    const command: Record<string, unknown> = {'spCool':value};
+    const command: Record<string, unknown> = {'spCool':Math.floor(value)};
     
     this.platform.kumo.execute(this.accessory.context.serial, command);
     this.lastupdate = Date.now();
@@ -278,7 +280,7 @@ export class KumoPlatformAccessory {
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, maxHeatSetpoint);
     }
 
-    const command: Record<string, unknown> = {'spHeat':value};
+    const command: Record<string, unknown> = {'spHeat':Math.floor(value)};
     
     this.platform.kumo.execute(this.accessory.context.serial, command);
     this.lastupdate = Date.now();
