@@ -109,27 +109,32 @@ export class KumoPlatformAccessory {
   async handleActiveGet(callback) {
     if(!await this.updateDevice()) {
       //abort update
-    }
-   
-    const operation_mode: number = this.accessory.context.device.operation_mode;
-    this.platform.log.debug('operation_mode: %s', operation_mode);
-
+    // find currentValue
     let currentValue;
-    if (operation_mode === 16) {
-      // Unit inactive
-      currentValue = 0;
-    } else if (operation_mode === 7 || operation_mode === 2) {
-      // Fan or Dehumidifier - set Active OFF
-      currentValue = 0;
-    } else if (operation_mode === 8) {
-      // Auto Mode
-      currentValue = 1;
-    } else if (operation_mode === 1 || operation_mode === 33) {
-      // Heating
-      currentValue = 1;
-    } else if (operation_mode === 3 || operation_mode === 35) {
-      // Cooling
-      currentValue = 1;
+    currentValue = this.HeaterCooler.getCharacteristic(this.platform.Characteristic.Active).value;
+
+    if(await this.updateDevice()) { 
+      //update
+      const operation_mode: number = this.accessory.context.device.operation_mode;
+      this.platform.log.debug('operation_mode: %s', operation_mode);    
+      if (operation_mode === 16) {
+        // Unit inactive
+        currentValue = 0;
+      } else if (operation_mode === 7 || operation_mode === 2) {
+        // Fan or Dehumidifier - set Active OFF
+        currentValue = 0;
+      } else if (operation_mode === 8) {
+        // Auto Mode
+        currentValue = 1;
+      } else if (operation_mode === 1 || operation_mode === 33) {
+        // Heating
+        currentValue = 1;
+      } else if (operation_mode === 3 || operation_mode === 35) {
+        // Cooling
+        currentValue = 1;
+      }
+
+      this.platform.log.debug('Triggered GET Heater/Cooler Active:', currentValue);
     }
 
     callback(null, currentValue);
@@ -158,43 +163,51 @@ export class KumoPlatformAccessory {
 
   // Handle requests to get the current value of the "Current Heater Cooler State" characteristic
   async handleCurrentHeaterCoolerStateGet(callback) {
-    await this.updateDevice();
-
-    const operation_mode: number = this.accessory.context.device.operation_mode;
-    this.platform.log.debug('operation_mode: %s', operation_mode);
-    
     let currentValue;
-    if (operation_mode === 16) {
-      currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.INACTIVE;
-    } else if (operation_mode === 7 || operation_mode === 2) {
-      currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
-    } else if (operation_mode === 1 || operation_mode === 33) {
-      currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
-    } else if (operation_mode === 3 || operation_mode === 35) {
-      currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
+    currentValue = this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState).value;
+
+    if(await this.updateDevice()) {
+      // update
+      const operation_mode: number = this.accessory.context.device.operation_mode;
+      this.platform.log.debug('operation_mode: %s', operation_mode);
+      
+      if (operation_mode === 16) {
+        currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.INACTIVE;
+      } else if (operation_mode === 7 || operation_mode === 2) {
+        currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
+      } else if (operation_mode === 1 || operation_mode === 33) {
+        currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
+      } else if (operation_mode === 3 || operation_mode === 35) {
+        currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
+      }
+
+      this.platform.log.debug('Triggered GET CurrentHeaterCoolerState:', currentValue);
     }
-    
-    this.platform.log.debug('Triggered GET CurrentHeaterCoolerState', currentValue);
+        
     callback(null, currentValue);
   }
 
   // Handle requests to get the current value of the "Target Heater Cooler State" characteristic
   async handleTargetHeaterCoolerStateGet(callback) {
-    await this.updateDevice();
-
-    const operation_mode: number = this.accessory.context.device.operation_mode;
-    this.platform.log.debug('operation_mode: %s', operation_mode);
-
     let currentValue;
-    if (operation_mode === 8 || operation_mode === 35 || operation_mode === 33) {
-      currentValue = this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
-    } else if (operation_mode === 1) {
-      currentValue = this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
-    } else if (operation_mode === 3) {
-      currentValue = this.platform.Characteristic.TargetHeaterCoolerState.COOL;
+    currentValue = this.HeaterCooler.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState).value;
+
+    if(await this.updateDevice()) {
+      // update
+      const operation_mode: number = this.accessory.context.device.operation_mode;
+      this.platform.log.debug('operation_mode: %s', operation_mode);
+
+      if (operation_mode === 8 || operation_mode === 35 || operation_mode === 33) {
+        currentValue = this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
+      } else if (operation_mode === 1) {
+        currentValue = this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
+      } else if (operation_mode === 3) {
+        currentValue = this.platform.Characteristic.TargetHeaterCoolerState.COOL;
+      }
+
+      this.platform.log.debug('Triggered GET TargetHeaterCoolerState:', currentValue);
     }
 
-    this.platform.log.debug('Triggered GET TargetHeaterCoolerState', currentValue);
     callback(null, currentValue);
   }
 
@@ -220,22 +233,30 @@ export class KumoPlatformAccessory {
   }  
 
   async handleTargetHeaterCoolingThresholdTemperatureGet(callback) {
-    await this.updateDevice();
+    let currentValue;
+    currentValue = this.HeaterCooler.getCharacteristic(
+      this.platform.Characteristic.CoolingThresholdTemperature).value;
 
-    // set this to a valid value for CurrentTemperature
-    const currentValue = this.accessory.context.device.sp_cool;
-    this.platform.log.debug('Triggered GET TargetHeaterCoolingThresholdTemperature', currentValue);
+    if(await this.updateDevice()) {
+      // set this to a valid value for CurrentTemperature
+      const currentValue = this.accessory.context.device.sp_cool;
+      this.platform.log.debug('Triggered GET TargetHeaterCoolingThresholdTemperature:', currentValue);
+    }
 
     callback(null, currentValue);
   }
 
   async handleTargetHeaterHeatingThresholdTemperatureGet(callback) {
-    await this.updateDevice();
+    let currentValue;
+    currentValue = this.HeaterCooler.getCharacteristic(
+      this.platform.Characteristic.HeatingThresholdTemperature).value;
 
-    // set this to a valid value for CurrentTemperature
-    const currentValue = this.accessory.context.device.sp_heat;
-    this.platform.log.debug('Triggered GET TargetHeaterHeatingThresholdTemperature', currentValue);
-    
+    if(await this.updateDevice()) {
+      // set this to a valid value for CurrentTemperature
+      currentValue = this.accessory.context.device.sp_heat;
+      this.platform.log.debug('Triggered GET TargetHeaterHeatingThresholdTemperature:', currentValue);
+    }
+
     callback(null, currentValue);
   }
 
@@ -260,34 +281,39 @@ export class KumoPlatformAccessory {
   }  
 
   async handleCurrentTemperatureGet(callback) {
-    await this.updateDevice();
+    let currentValue;
+    currentValue = this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value;
 
-    // set this to a valid value for CurrentTemperature
-    const currentValue = this.accessory.context.device.room_temp;
-    this.platform.log.debug('Triggered GET CurrentTemperature', currentValue);
+    if(await this.updateDevice()) {
+      // set this to a valid value for CurrentTemperature
+      currentValue = this.accessory.context.device.room_temp;
+      this.platform.log.debug('Triggered GET CurrentTemperature:', currentValue);
+    }
 
     callback(null, currentValue);
   }
 
   async handleFanActiveGet(callback) {
-    await this.updateDevice();
-    
-    // retrieve fan_speed
-    const fan_speed: number = this.accessory.context.device.fan_speed;
-    
     let currentValue;
-    if(fan_speed > 0 && this.accessory.context.device.power === 1) {
-      currentValue = 1;
-    } else {
-      currentValue = 0;
+    currentValue = this.Fan.getCharacteristic(this.platform.Characteristic.Active).value;
+
+    if(await this.updateDevice()) {
+      // retrieve fan_speed
+      const fan_speed: number = this.accessory.context.device.fan_speed;
+
+      if(fan_speed > 0 && this.accessory.context.device.power === 1) {
+        currentValue = 1;
+      } else {
+        currentValue = 0;
+      }
+      this.platform.log.debug('Triggered GET Manual FanActive:', currentValue);
     }
-    this.platform.log.debug('Triggered GET Manual FanActive', currentValue);
 
     callback(null, currentValue);
   }
 
   handleFanActiveSet(value, callback) {
-    this.platform.log.debug('Triggered SET Manual FanActive', value);
+    this.platform.log.debug('Triggered SET Manual FanActive:', value);
 
     let command;   
     if(value === 0) {
@@ -310,19 +336,24 @@ export class KumoPlatformAccessory {
   }
 
   async handleFanRotationSpeedGet(callback) {
-    await this.updateDevice();
+    let currentValue;
+    currentValue = this.Fan.getCharacteristic(this.platform.Characteristic.RotationSpeed).value;
 
-    this.platform.log.debug('fan_speed:', this.accessory.context.device.fan_speed);
+    if(await this.updateDevice()) {
+      // retrieve fan_speed
+      const fan_speed: number = this.accessory.context.device.fan_speed;
+      this.platform.log.debug('fan_speed:', fan_speed);
 
-    const currentValue: number = (this.accessory.context.device.fan_speed - 1) * 20;
-    this.platform.log.debug('Triggered GET handleFanRotationSpeed', currentValue);
+      currentValue = (fan_speed - 1) * 20;
+      this.platform.log.debug('Triggered GET handleFanRotationSpeed:', currentValue);
+    }
 
     callback(null, currentValue);
   }
 
   handleFanRotationSpeedSet(value, callback) {
     const speed: number = Math.floor(value / 20) + 1;
-    this.platform.log.debug('Triggered SET handleFanRotationSpeed', speed);
+    this.platform.log.debug('Triggered SET handleFanRotationSpeed:', speed);
     
     const command: Record<string, unknown> = {'fanSpeed':speed};
 
@@ -332,17 +363,21 @@ export class KumoPlatformAccessory {
   }
 
   async handleFanSwingModeGet(callback) {
-    await this.updateDevice();
-
-    // retrieve air_direction
-    const air_direction: number = this.accessory.context.device.air_direction;
-    this.platform.log.debug('air_direction:', air_direction);
-
     let currentValue;
-    if(air_direction === 7) {
-      currentValue = this.platform.Characteristic.SwingMode.SWING_ENABLED;
-    } else {
-      currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
+    currentValue = this.Fan.getCharacteristic(this.platform.Characteristic.SwingMode).value;
+
+    if(await this.updateDevice()) {
+      // retrieve air_direction
+      const air_direction: number = this.accessory.context.device.air_direction;
+      this.platform.log.debug('air_direction:', air_direction);
+
+      if(air_direction === 7) {
+        currentValue = this.platform.Characteristic.SwingMode.SWING_ENABLED;
+      } else {
+        currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
+      }
+
+      this.platform.log.debug('Triggered GET handleFanSwingMode:', currentValue);
     }
 
     callback(null, currentValue);
@@ -363,11 +398,14 @@ export class KumoPlatformAccessory {
   }
 
   async handlePowerSwitchOnGet(callback) {
-    await this.updateDevice();
+    let currentValue;
+    currentValue = this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On).value;
 
-    const currentValue: number = this.accessory.context.device.power;
-    this.platform.log.debug('Triggered GET Power Active', currentValue);
-
+    if(await this.updateDevice()) {
+      currentValue = this.accessory.context.device.power;
+      this.platform.log.debug('Triggered GET Power Active:', currentValue);
+    }
+    
     callback(null, currentValue);
   }
 
