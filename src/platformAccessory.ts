@@ -145,8 +145,19 @@ export class KumoPlatformAccessory {
       // turn ON fan mode
       command = {'operationMode':7};
     } else if(value === 1 && value_old === 0) {
-      // turn ON auto mode
-      command = {'power':1, 'operationMode':8};
+      // use existing TargetHeaterCoolerState
+      const value: number = <number>this.HeaterCooler.getCharacteristic(
+        this.platform.Characteristic.TargetHeaterCoolerState).value;
+      if(value === this.platform.Characteristic.TargetHeaterCoolerState.AUTO) {
+        command = {'power':1, 'operationMode':8};
+      } else if(value === this.platform.Characteristic.TargetHeaterCoolerState.HEAT) {
+        command = {'power':1, 'operationMode':1};
+      } else if(value === this.platform.Characteristic.TargetHeaterCoolerState.COOL) {
+        command = {'power':1, 'operationMode':3};
+      } else {
+        // turn ON auto mode if not already set.
+        command = {'power':1, 'operationMode':8};
+      }
     }
 
     if(command !== undefined) {
@@ -402,7 +413,6 @@ export class KumoPlatformAccessory {
   }
   
   handleFanSwingModeSet (value, callback) {
-
     let command: Record<string, unknown> | undefined;
     if(value === this.platform.Characteristic.SwingMode.SWING_ENABLED){
       command = {'airDirection':7};
