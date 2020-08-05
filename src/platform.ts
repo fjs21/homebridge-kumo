@@ -64,7 +64,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
     const flag = await this.kumo.acquireSecurityToken();
     if(!flag){
-      this.log.info('Failed to login.');
+      this.log.error('Failed to login.');
     }
 
     // loop over the discovered devices and register each one if it has not already been registered

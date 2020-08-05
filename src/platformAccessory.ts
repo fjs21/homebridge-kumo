@@ -191,7 +191,7 @@ export class KumoPlatformAccessory {
       const operation_mode: number = this.accessory.context.device.operation_mode;
       this.platform.log.debug('operation_mode: %s', operation_mode);
 
-      if (operation_mode === 8 || operation_mode === 35 || operation_mode === 33) {
+      if (operation_mode === 8) {
         currentValue = this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
       } else if (operation_mode === 1) {
         currentValue = this.platform.Characteristic.TargetHeaterCoolerState.HEAT;

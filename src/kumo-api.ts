@@ -96,7 +96,7 @@ export class KumoApi {
     });
 
     if(!response) {
-      this.log.info('Kumo API: Unable to authenticate. Will try later.');
+      this.log.warn('Kumo API: Unable to authenticate. Will try later.');
       return false;
     }
 
@@ -157,12 +157,12 @@ export class KumoApi {
 
     // We want to throttle how often we call this API to no more than once every 5 minutes.
     if((now - this.lastAuthenticateCall) < (1 * 60 * 1000)) {
-      this.log.debug('Kumo API: throttling acquireSecurityToken API call.');
+      this.log.info('Kumo API: throttling acquireSecurityToken API call.');
 
       return true;
     }
 
-    this.log.debug('Kumo API: acquiring a new security token.');
+    this.log.info('Kumo API: acquiring a new security token.');
 
     // Now generate a new security token.
     if(!(await this.acquireSecurityToken())) {
@@ -219,12 +219,15 @@ export class KumoApi {
     const data = await response.json();
 
     if(!data) {
-      this.log.info('Kumo API: Unable to send the command to Kumo servers. Acquiring a new security token.');
+      this.log.warn('Kumo API: Unable to send the command to Kumo servers. Acquiring a new security token.');
       this.securityTokenTimestamp = 0;
       return false;
     }
 
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
+    if(data[2][0][0] != serial){
+      this.log.warn('Kumo API: Bad response.');
+    }
 
     return true;
   }
@@ -245,7 +248,7 @@ export class KumoApi {
     const data = await response.json();
 
     if(!data) {
-      log.info('Kumo API: error querying device: %s.', serial);
+      log.warn('Kumo API: error querying device: %s.', serial);
       return false;
     }
 
