@@ -107,7 +107,7 @@ export class KumoApi {
     // What we should get back upon successfully calling /Login is a security token for
     // use in future API calls this session.
     if(!data || !data[0].token) {
-      this.log.info('Kumo API: Unable to acquire a security token.');
+      this.log.warn('Kumo API: Unable to acquire a security token.');
       return false;
     }
 
@@ -157,7 +157,7 @@ export class KumoApi {
 
     // We want to throttle how often we call this API to no more than once every 5 minutes.
     if((now - this.lastAuthenticateCall) < (1 * 60 * 1000)) {
-      this.log.info('Kumo API: throttling acquireSecurityToken API call.');
+      this.log.warn('Kumo API: throttling acquireSecurityToken API call.');
 
       return true;
     }
@@ -188,7 +188,7 @@ export class KumoApi {
     const data = await response.json();
 
     if(!data || !data[2]) {
-      log.info('Kumo API: error querying device: %s.', serial);
+      log.warn('Kumo API: error querying device: %s.', serial);
       return null as unknown as KumoDevice;
     }
 
