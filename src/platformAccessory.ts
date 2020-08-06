@@ -163,7 +163,7 @@ export class KumoPlatformAccessory {
     if(command !== undefined) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
       this.lastupdate = Date.now();
-      this.platform.log.debug('Triggered SET Heater/Cooler Active:', value);  
+      this.platform.log.info('Triggered SET Heater/Cooler Active:', value);  
     }
     callback(null);
   }
@@ -236,7 +236,7 @@ export class KumoPlatformAccessory {
       this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.Active, 1);
       this.platform.kumo.execute(this.accessory.context.serial, command);
       this.lastupdate = Date.now();
-      this.platform.log.debug('Triggered SET TargetHeaterCoolerState:', value);  
+      this.platform.log.info('Triggered SET TargetHeaterCoolerState:', value);  
     }
     callback(null);
   }  
@@ -279,7 +279,7 @@ export class KumoPlatformAccessory {
     
     this.platform.kumo.execute(this.accessory.context.serial, command);
     this.lastupdate = Date.now();
-    this.platform.log.debug('Triggered SET TargetHeaterCoolingThresholdTemperature:', value);
+    this.platform.log.info('Triggered SET TargetHeaterCoolingThresholdTemperature:', value);
     callback(null);
   }  
 
@@ -295,7 +295,7 @@ export class KumoPlatformAccessory {
     
     this.platform.kumo.execute(this.accessory.context.serial, command);
     this.lastupdate = Date.now();
-    this.platform.log.debug('Triggered SET TargetHeaterHeatingThresholdTemperature:', value);
+    this.platform.log.info('Triggered SET TargetHeaterHeatingThresholdTemperature:', value);
     callback(null);
   }  
 
@@ -355,7 +355,7 @@ export class KumoPlatformAccessory {
     if(command !== undefined) {
       this.platform.kumo.execute(this.accessory.context.serial, command);    
       this.lastupdate = Date.now();
-      this.platform.log.debug('Triggered SET Manual FanActive:', value);
+      this.platform.log.info('Triggered SET Manual FanActive:', value);
     }
     callback(null);
   }
@@ -386,7 +386,7 @@ export class KumoPlatformAccessory {
       // send comand to update fanSpeed    
       const command: Record<string, unknown> = {'fanSpeed':speed};
       this.platform.kumo.execute(this.accessory.context.serial, command);    
-      this.platform.log.debug('Triggered SET handleFanRotationSpeed:', speed);
+      this.platform.log.info('Triggered SET handleFanRotationSpeed:', speed);
     }
     this.lastupdate = Date.now();
     callback(null);
@@ -452,7 +452,7 @@ export class KumoPlatformAccessory {
     if(command !== undefined) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
       this.lastupdate = Date.now();
-      this.platform.log.debug('Triggered SET PowerSwitch Active:', value);  
+      this.platform.log.info('Triggered SET PowerSwitch Active:', value);  
     }
     callback(null);
   }
