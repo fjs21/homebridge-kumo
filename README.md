@@ -7,6 +7,7 @@
 # Homebridge Kumo
 [![Downloads](https://badgen.net/npm/dt/homebridge-kumo)](https://www.npmjs.com/package/homebridge-kumo)
 [![Version](https://badgen.net/npm/v/homebridge-kumo)](https://www.npmjs.com/package/homebridge-kumo)
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 [![GitHub issues](https://img.shields.io/github/issues/fjs21/homebridge-kumo)](https://github.com/fjs21/homebridge-kumo/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/fjs21/homebridge-kumo)](https://github.com/fjs21/homebridge-kumo/pulls)
