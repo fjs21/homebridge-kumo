@@ -1,6 +1,10 @@
 import { Logger } from 'homebridge';
 import fetch from 'node-fetch';
 import util from 'util';
+import CryptoJS from 'crypto-js';
+
+import sjcl from 'sjcl';
+import base64 from 'base-64';
 
 import { 
   KUMO_LOGIN_URL, 
@@ -8,6 +12,7 @@ import {
   KUMO_DEVICE_INFREQUENT_UPDATES_URL,
   KUMO_DEVICE_EXECUTE_URL, 
   KUMO_API_TOKEN_REFRESH_INTERVAL, 
+  KUMO_KEY,
 } from './settings';
 
 interface KumoDeviceInterface {
@@ -45,6 +50,10 @@ export type KumoDevice = Readonly<KumoDeviceInterface>;
 
 // Renew Kumo security credentials every so often, in hours.
 const KumoTokenExpirationWindow = KUMO_API_TOKEN_REFRESH_INTERVAL * 60 * 60 * 1000;
+
+// constants for direct device connection.
+const W_PARAM = new util.TextEncoder().encode(KUMO_KEY);
+const S_PARAM = 0;
 
 export class KumoApi {
   Devices!: Array<KumoDevice>;
@@ -115,17 +124,19 @@ export class KumoApi {
     if(!this.securityToken) {
       this.log.info('Kumo API: Successfully connected to the Kumo API.');
       // Find devices and serial numbers
-      const zoneTable = data[2].children[0].zoneTable;
       this.devices = [];
-      for (const serial in zoneTable) {
-        this.log.debug(`Serial: ${serial}`);
-        this.log.debug(`Label: ${zoneTable[serial].label}`);
-        const device = {
-          serial: serial,
-          label: zoneTable[serial].label,
-          zoneTable: zoneTable[serial],
-        };
-        this.devices.push(device);
+      for (let child of data[2].children) {
+        const zoneTable = child.zoneTable;
+        for (const serial in zoneTable) {
+          this.log.debug(`Serial: ${serial}`);
+          this.log.debug(`Label: ${zoneTable[serial].label}`);
+          const device = {
+            serial: serial,
+            label: zoneTable[serial].label,
+            zoneTable: zoneTable[serial],
+          };
+          this.devices.push(device);
+        }
       }  
       this.log.info('Number of devices found:', this.devices.length);
     }
@@ -255,5 +266,146 @@ export class KumoApi {
     //this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
 
     return true;
+  }
+
+  // ImplementDirectAccess
+  async queryDevice_Direct(log: Logger, serial: string) {  
+    let zoneTable; 
+    for (const device of this.devices) {
+      if (device.serial === serial){
+        zoneTable = device.zoneTable;
+      }
+    }
+    const address: string = zoneTable.address;
+    const cryptoSerial: string = zoneTable.cryptoSerial; // KCS
+    const password: string = zoneTable.password; // Kcryptopassword
+    
+    const url = 'http://' + address + '/api?m=' +
+      this.encodeToken('{"c":{"indoorUnit":{"status":{}}}}', password, cryptoSerial);
+    log.info('url:', url);
+    /*
+    if(!(await this.checkSecurityToken())) {
+      return null as unknown as KumoDevice;
+    }
+
+    // Get Device Information
+    const response = await fetch(KUMO_DEVICE_UPDATES_URL, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify([this.securityToken, [serial]]),
+    });
+
+    const data = await response.json();
+
+    if(!data || !data[2]) {
+      log.warn('Kumo API: error querying device: %s.', serial);
+      return null as unknown as KumoDevice;
+    }
+
+    //this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
+
+    const device: KumoDevice = data[2][0][0];
+
+    return device;
+    */
+  }
+
+  private encodeToken(post_data, password, cryptoSerial) {
+    //const data_hash = hashlib.sha256(password + post_data).digest();
+    const data_hash = CryptoJS.SHA256(password + post_data);
+    console.log(data_hash);
+    /*
+    //let intermediate = bytearray(88);
+    let intermediate = new Uint8Array(88);
+    //intermediate[0:32] = W_PARAM[0:32]
+    //intermediate[32:64] = data_hash[0:32]
+    for (let i = 0; i <= 32; i++) {
+      intermediate[i] = W_PARAM[i];
+      intermediate[i + 32] = data_hash[i];
+    }
+    //intermediate[64:66] = bytearray.fromhex("0840")
+    for (let i = 64; i <= 66; i++) {
+      intermediate[i] = 0x0840;
+    }
+    intermediate[66] = S_PARAM;
+    const cryptoserial = new TextEncoder.encode(cryptoSerial)
+    intermediate[79] = cryptoserial[8];
+    //intermediate[80:84] = cryptoSerial[4:8]
+    //intermediate[84:88] = cryptoSerial[0:4]
+    for (let i = 0; i <= 4; i++) {
+      intermediate[i + 80] = cryptoserial[i];
+      intermediate[i + 84] = cryptoserial[i + 4];
+    }
+    console.log(intermediate);
+    //const token = hashlib.sha256(intermediate).hexdigest();
+    const token = CryptoJS.SHA256(intermediate).toString();
+
+    return token;
+    */
+  }
+
+  private encodeToken1(post_data, password, cryptoSerial) {
+    let W = this.h2l(KUMO_KEY);
+    let p = base64.decode(password);
+    let dta = post_data;
+    let dt1 = sjcl.codec.hex.fromBits(
+        sjcl.hash.sha256.hash(
+            sjcl.codec.hex.toBits(
+                this.l2h(
+                    Array.prototype.map.call(p + dta, function (m2) {
+                        return m2.charCodeAt(0);
+                    })
+                )
+            )
+        )
+    );
+    console.log(dt1);
+    /*
+    let dt1_l: any = this.h2l(dt1);
+    let dt2 = '';
+    for (let i = 0; i < 88; i++) {
+        dt2 += '00'
+    }
+    let dt3: any = this.h2l(dt2);
+    dt3[64] = 8;
+    dt3[65] = 64;
+    Array.prototype.splice.apply(dt3, [32, 32].concat(dt1_l));
+    dt3[66] = 0;
+    let cryptoserial = this.h2l(cryptoSerial);
+    dt3[79] = cryptoserial[8];
+    dt3[80] = cryptoserial[4];
+    dt3[81] = cryptoserial[5];
+    dt3[82] = cryptoserial[6];
+    dt3[83] = cryptoserial[7];
+    dt3[84] = cryptoserial[0];
+    dt3[85] = cryptoserial[1];
+    dt3[86] = cryptoserial[2];
+    dt3[87] = cryptoserial[3];
+    Array.prototype.splice.apply(dt3, [0, 32].concat(W));
+    let hash = sjcl.codec.hex.fromBits(
+        sjcl.hash.sha256.hash(sjcl.codec.hex.toBits(this.l2h(dt3)))
+    )
+    //this.log('hash: %s', hash);
+    //this.log('kumo command: %s', dt);
+    return hash;
+    */
+  }
+
+  private h2l (dt) {
+    let r: any = [];
+    for (let i = 0; i < dt.length; i += 2) {
+        r.push(parseInt(dt.substr(i, 2), 16));
+    }
+    return r;
+  };
+
+  private l2h (l) {
+    let r: any = '';
+    for (let i = 0; i < l.length; ++i) {
+        let c = l[i];
+        if (c < 16) r += '0';
+        r += Number(c).toString(16);
+    }
+    return r;
   }
 }

@@ -87,6 +87,9 @@ export class KumoPlatformAccessory {
     const device: KumoDevice = await this.platform.kumo.queryDevice(this.platform.log, this.accessory.context.serial);   
     //this.platform.log.debug("seconds_since_contact",device.seconds_since_contact);
 
+    // testing direct connections
+    await this.platform.kumo.queryDevice_Direct(this.platform.log, this.accessory.context.serial);
+
     // set last contact with device time and  add LAG to ensure command went through
     const lastcontact = Date.now() - ((device.seconds_since_contact + KUMO_LAG) * 1000);
     //this.platform.log.debug("lastcontact from device:", lastcontact);

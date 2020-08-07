@@ -20,3 +20,5 @@ export const KUMO_API_TOKEN_REFRESH_INTERVAL = 20;
 
 // additional lag
 export const KUMO_LAG = 10;
+
+export const KUMO_KEY = '44c73283b498d432ff25f5c8e06a016aef931e68f0a00ea710e36e6338fb22db';
