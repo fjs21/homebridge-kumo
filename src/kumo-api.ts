@@ -125,7 +125,7 @@ export class KumoApi {
       this.log.info('Kumo API: Successfully connected to the Kumo API.');
       // Find devices and serial numbers
       this.devices = [];
-      for (let child of data[2].children) {
+      for (const child of data[2].children) {
         const zoneTable = child.zoneTable;
         for (const serial in zoneTable) {
           this.log.debug(`Serial: ${serial}`);
@@ -282,7 +282,10 @@ export class KumoApi {
     
     const url = 'http://' + address + '/api?m=' +
       this.encodeToken('{"c":{"indoorUnit":{"status":{}}}}', password, cryptoSerial);
-    log.info('url:', url);
+    //log.info('url_encodeToken:', url);
+    const url1 = 'http://' + address + '/api?m=' +
+      this.encodeToken1('{"c":{"indoorUnit":{"status":{}}}}', password, cryptoSerial);
+    //log.info('url_encodeToken1:', url1)
     /*
     if(!(await this.checkSecurityToken())) {
       return null as unknown as KumoDevice;
@@ -313,7 +316,7 @@ export class KumoApi {
   private encodeToken(post_data, password, cryptoSerial) {
     //const data_hash = hashlib.sha256(password + post_data).digest();
     const data_hash = CryptoJS.SHA256(password + post_data);
-    console.log(data_hash);
+    //console.log(data_hash);
     /*
     //let intermediate = bytearray(88);
     let intermediate = new Uint8Array(88);
@@ -345,21 +348,21 @@ export class KumoApi {
   }
 
   private encodeToken1(post_data, password, cryptoSerial) {
-    let W = this.h2l(KUMO_KEY);
-    let p = base64.decode(password);
-    let dta = post_data;
-    let dt1 = sjcl.codec.hex.fromBits(
-        sjcl.hash.sha256.hash(
-            sjcl.codec.hex.toBits(
-                this.l2h(
-                    Array.prototype.map.call(p + dta, function (m2) {
-                        return m2.charCodeAt(0);
-                    })
-                )
-            )
-        )
+    const W = this.h2l(KUMO_KEY);
+    const p = base64.decode(password);
+    const dta = post_data;
+    const dt1 = sjcl.codec.hex.fromBits(
+      sjcl.hash.sha256.hash(
+        sjcl.codec.hex.toBits(
+          this.l2h(
+            Array.prototype.map.call(p + dta, (m2) => {
+              return m2.charCodeAt(0);
+            }),
+          ),
+        ),
+      ),
     );
-    console.log(dt1);
+    //console.log(dt1);
     /*
     let dt1_l: any = this.h2l(dt1);
     let dt2 = '';
@@ -392,19 +395,21 @@ export class KumoApi {
   }
 
   private h2l (dt) {
-    let r: any = [];
+    const r: any = [];
     for (let i = 0; i < dt.length; i += 2) {
-        r.push(parseInt(dt.substr(i, 2), 16));
+      r.push(parseInt(dt.substr(i, 2), 16));
     }
     return r;
-  };
+  }
 
   private l2h (l) {
     let r: any = '';
     for (let i = 0; i < l.length; ++i) {
-        let c = l[i];
-        if (c < 16) r += '0';
-        r += Number(c).toString(16);
+      const c = l[i];
+      if (c < 16) {
+        r += '0';
+      }
+      r += Number(c).toString(16);
     }
     return r;
   }
