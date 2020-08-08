@@ -25,7 +25,6 @@
   ],
   "dependencies": {
     "base-64": "^0.1.0",
-    "crypto-js": "^4.0.0",
     "node-fetch": "^2.6.0",
     "sjcl": "^1.0.8"
   },
