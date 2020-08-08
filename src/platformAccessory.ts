@@ -1,6 +1,6 @@
 import { Service, PlatformAccessory } from 'homebridge';
 
-import { KumoDevice } from './kumo-api';
+import { KumoDevice, KumoDeviceDirect } from './kumo-api';
 
 import { KumoHomebridgePlatform } from './platform';
 
@@ -17,11 +17,15 @@ export class KumoPlatformAccessory {
   private PowerSwitch: Service;
 
   private lastupdate;
+  private lastquery;
 
   constructor(
     private readonly platform: KumoHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
   ) {
+    //
+    this.lastquery = Date.now();
+
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
@@ -82,25 +86,34 @@ export class KumoPlatformAccessory {
   // As Device updates take some time to update need to check before updating HAP with stale data.
   async updateDevice() {
     // queryDevice and update context.device depending on last contact/update.
+    let device: KumoDevice | KumoDeviceDirect;
+    if (!this.platform.config.directAccess){
+      // queryDevice via Kumo Cloud
+      device = await this.platform.kumo.queryDevice(this.accessory.context.serial);   
 
-    // queryDevice
-    const device: KumoDevice = await this.platform.kumo.queryDevice(this.platform.log, this.accessory.context.serial);   
-    //this.platform.log.debug("seconds_since_contact",device.seconds_since_contact);
-
-    // testing direct connections
-    await this.platform.kumo.queryDevice_Direct(this.platform.log, this.accessory.context.serial);
-
-    // set last contact with device time and  add LAG to ensure command went through
-    const lastcontact = Date.now() - ((device.seconds_since_contact + KUMO_LAG) * 1000);
-    //this.platform.log.debug("lastcontact from device:", lastcontact);
-
-    //this.platform.log.debug("last sent command to device:", this.lastupdate);
-
-    if(lastcontact < this.lastupdate) {
-      // last contact occured before last set operation
-      this.platform.log.debug('No recent update from Kumo cloud');
-      return false;
-    }  
+      // set last contact with device time and  add LAG to ensure command went through
+      const lastcontact = Date.now() - ((device.seconds_since_contact + KUMO_LAG) * 1000);
+     
+      if(lastcontact < this.lastupdate) {
+        // last contact occured before last set operation
+        this.platform.log.debug('No recent update from Kumo cloud');
+        return false;
+      }  
+    } else {
+      // queryDevice via Direct IP connection
+      // only update if data is more than one second old - prevents spamming the device
+      if ((Date.now() - 1000) < this.lastquery) {
+        this.platform.log.debug('Recent update from device already performed.');
+        return true; //ok to use current data in context to update Characteristic values
+      }
+      this.lastquery = Date.now(); // update time of last query     
+     
+      device = await this.platform.kumo.queryDevice_Direct(this.accessory.context.serial);
+      if(!device) {
+        return false;
+        this.platform.log.warn('queryDevice_Direct failed.');
+      }
+    }
 
     // update device contect
     this.accessory.context.device = device;          
@@ -115,20 +128,26 @@ export class KumoPlatformAccessory {
     if(await this.updateDevice()) { 
       //update
       const operation_mode: number = this.accessory.context.device.operation_mode;
-      this.platform.log.debug('operation_mode: %s', operation_mode);    
-      if (operation_mode === 16) {
+      this.platform.log.debug('operation_mode: %s', operation_mode); 
+      const mode: string = this.accessory.context.device.mode;
+      this.platform.log.debug('mode: %s.', mode);
+
+      if (operation_mode === 16 || mode === 'off') {
         // Unit inactive
         currentValue = 0;
-      } else if (operation_mode === 7 || operation_mode === 2) {
+      } else if (operation_mode === 7 || operation_mode === 2 
+          || mode === 'vent' || mode === 'dry') {
         // Fan or Dehumidifier - set Active OFF
         currentValue = 0;
-      } else if (operation_mode === 8) {
+      } else if (operation_mode === 8 || mode === 'auto') {
         // Auto Mode
         currentValue = 1;
-      } else if (operation_mode === 1 || operation_mode === 33) {
+      } else if (operation_mode === 1 || operation_mode === 33 
+          || mode === 'heat' || mode === 'autoHeat') {
         // Heating
         currentValue = 1;
-      } else if (operation_mode === 3 || operation_mode === 35) {
+      } else if (operation_mode === 3 || operation_mode === 35 
+          || mode === 'cool' || mode === 'autoCool') {
         // Cooling
         currentValue = 1;
       }
@@ -144,27 +163,37 @@ export class KumoPlatformAccessory {
     const value_old: number = <number>this.HeaterCooler.getCharacteristic(this.platform.Characteristic.Active).value;
 
     let command: Record<string, unknown> | undefined;
+    let commandDirect: Record<string, unknown> | undefined;
     if(value === 0 && value_old === 1) {
       // turn ON fan mode
       command = {'operationMode':7};
+      commandDirect = {'mode':'vent'};
     } else if(value === 1 && value_old === 0) {
       // use existing TargetHeaterCoolerState
       const value: number = <number>this.HeaterCooler.getCharacteristic(
         this.platform.Characteristic.TargetHeaterCoolerState).value;
       if(value === this.platform.Characteristic.TargetHeaterCoolerState.AUTO) {
         command = {'power':1, 'operationMode':8};
+        commandDirect = {'mode': 'auto'};
       } else if(value === this.platform.Characteristic.TargetHeaterCoolerState.HEAT) {
         command = {'power':1, 'operationMode':1};
+        commandDirect = {'mode': 'heat'};
       } else if(value === this.platform.Characteristic.TargetHeaterCoolerState.COOL) {
         command = {'power':1, 'operationMode':3};
+        commandDirect = {'mode': 'cool'};
       } else {
         // turn ON auto mode if not already set.
         command = {'power':1, 'operationMode':8};
+        commandDirect = {'mode': 'auto'};
       }
     }
 
-    if(command !== undefined) {
-      this.platform.kumo.execute(this.accessory.context.serial, command);
+    if(command !== undefined || commandDirect !== undefined) {
+      if(command !== undefined && !this.platform.config.directAccess) {
+        this.platform.kumo.execute(this.accessory.context.serial, command);
+      } else if (commandDirect !== undefined && this.platform.config.directAccess) {
+        this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+      }
       this.lastupdate = Date.now();
       this.platform.log.info('Heater/Cooler: set Active from %s to %s', value_old, value);  
     }
@@ -179,14 +208,19 @@ export class KumoPlatformAccessory {
       // update
       const operation_mode: number = this.accessory.context.device.operation_mode;
       this.platform.log.debug('operation_mode: %s', operation_mode);
-      
-      if (operation_mode === 16) {
+      const mode: string = this.accessory.context.device.mode;
+      this.platform.log.debug('mode: %s', mode);
+
+      if (operation_mode === 16 || mode === 'off') {
         currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.INACTIVE;
-      } else if (operation_mode === 7 || operation_mode === 2) {
+      } else if (operation_mode === 7 || operation_mode === 2
+          || mode === 'vent' || mode === 'dry') {
         currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
-      } else if (operation_mode === 1 || operation_mode === 33) {
+      } else if (operation_mode === 1 || operation_mode === 33 
+          || mode === 'heat' || mode === 'autoHeat') {
         currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
-      } else if (operation_mode === 3 || operation_mode === 35) {
+      } else if (operation_mode === 3 || operation_mode === 35 
+          || mode === 'cool' || mode === 'autoCool') {
         currentValue = this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
       }
 
@@ -204,12 +238,14 @@ export class KumoPlatformAccessory {
       // update
       const operation_mode: number = this.accessory.context.device.operation_mode;
       this.platform.log.debug('operation_mode: %s', operation_mode);
+      const mode: string = this.accessory.context.device.mode;
+      this.platform.log.debug('mode: %s', mode);
 
-      if (operation_mode === 8) {
+      if (operation_mode === 8 || mode === 'auto' || mode === 'autoHeat' || mode === 'autoCool') {
         currentValue = this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
-      } else if (operation_mode === 1) {
+      } else if (operation_mode === 1 || mode === 'heat') {
         currentValue = this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
-      } else if (operation_mode === 3) {
+      } else if (operation_mode === 3 || mode === 'cool') {
         currentValue = this.platform.Characteristic.TargetHeaterCoolerState.COOL;
       }
 
@@ -225,19 +261,27 @@ export class KumoPlatformAccessory {
       this.platform.Characteristic.TargetHeaterCoolerState).value;
 
     let command: Record<string, unknown> | undefined;
+    let commandDirect: Record<string, unknown> | undefined;
     if(value !== value_old){
       if(value === this.platform.Characteristic.TargetHeaterCoolerState.AUTO) {
         command = {'power':1, 'operationMode':8};
+        commandDirect = {'mode':'auto'};
       } else if(value === this.platform.Characteristic.TargetHeaterCoolerState.HEAT) {
         command = {'power':1, 'operationMode':1};
+        commandDirect = {'mode':'heat'};
       } else if(value === this.platform.Characteristic.TargetHeaterCoolerState.COOL) {
         command = {'power':1, 'operationMode':3};
+        commandDirect = {'mode':'cool'};
       }
     }
 
-    if(command !== undefined) {
+    if(command !== undefined || commandDirect !== undefined) {
       this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.Active, 1);
-      this.platform.kumo.execute(this.accessory.context.serial, command);
+      if(command !== undefined && !this.platform.config.directAccess) {
+        this.platform.kumo.execute(this.accessory.context.serial, command);
+      } else if (commandDirect !== undefined && this.platform.config.directAccess) {
+        this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+      }
       this.lastupdate = Date.now();
       this.platform.log.info('Heater/Cooler: set TargetState from %s to %s.', value_old, value);  
     }
@@ -250,7 +294,11 @@ export class KumoPlatformAccessory {
 
     if(await this.updateDevice()) {
       // set this to a valid value for CurrentTemperature
-      currentValue = this.accessory.context.device.sp_cool;
+      if(this.accessory.context.device.sp_cool === undefined) {
+        currentValue = this.accessory.context.device.spCool;
+      } else {
+        currentValue = this.accessory.context.device.sp_cool;
+      }
       this.platform.log.debug('Triggered GET TargetHeaterCoolingThresholdTemperature:', currentValue);
     }
 
@@ -263,7 +311,11 @@ export class KumoPlatformAccessory {
 
     if(await this.updateDevice()) {
       // set this to a valid value for CurrentTemperature
-      currentValue = this.accessory.context.device.sp_heat;
+      if(this.accessory.context.device.sp_heat === undefined){
+        currentValue = this.accessory.context.device.spHeat;
+      } else {
+        currentValue = this.accessory.context.device.sp_heat;
+      }
       this.platform.log.debug('Triggered GET TargetHeaterHeatingThresholdTemperature:', currentValue);
     }
 
@@ -279,8 +331,13 @@ export class KumoPlatformAccessory {
     }
     
     const command: Record<string, unknown> = {'spCool':Math.floor(value)};
+    const commandDirect: Record<string, unknown> = {'spCool':Math.floor(value)};
     
-    this.platform.kumo.execute(this.accessory.context.serial, command);
+    if(!this.platform.config.directAccess) {
+      this.platform.kumo.execute(this.accessory.context.serial, command);
+    } else {
+      this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+    }
     this.lastupdate = Date.now();
     this.platform.log.info('Heater/Cooler: set CoolingThresholdTemperature to %s', value);
     callback(null);
@@ -295,8 +352,13 @@ export class KumoPlatformAccessory {
     }
 
     const command: Record<string, unknown> = {'spHeat':Math.floor(value)};
-    
-    this.platform.kumo.execute(this.accessory.context.serial, command);
+    const commandDirect: Record<string, unknown> = {'spHeat':Math.floor(value)};
+
+    if(!this.platform.config.directAccess) {
+      this.platform.kumo.execute(this.accessory.context.serial, command);
+    } else {
+      this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+    }
     this.lastupdate = Date.now();
     this.platform.log.info('Heater/Cooler: set HeatingThresholdTemperature to %s.', value);
     callback(null);
@@ -307,7 +369,11 @@ export class KumoPlatformAccessory {
 
     if(await this.updateDevice()) {
       // set this to a valid value for CurrentTemperature
-      currentValue = this.accessory.context.device.room_temp;
+      if(this.accessory.context.device.room_temp === undefined) {
+        currentValue = this.accessory.context.device.roomTemp;
+      } else {
+        currentValue = this.accessory.context.device.room_temp;
+      }
       this.platform.log.debug('Triggered GET CurrentTemperature:', currentValue);
     }
 
@@ -320,8 +386,12 @@ export class KumoPlatformAccessory {
     if(await this.updateDevice()) {
       // retrieve fan_speed
       const fan_speed: number = this.accessory.context.device.fan_speed;
+      const fan_auto: boolean = this.accessory.context.device.fanSpeed === 'auto';
 
-      if(fan_speed > 0 && this.accessory.context.device.power === 1) {
+      if(
+        (fan_speed > 0 && this.accessory.context.device.power === 1) ||
+        (!fan_auto && this.accessory.context.device.mode !== 'off')
+      ) {
         currentValue = 1;
       } else {
         currentValue = 0;
@@ -334,20 +404,27 @@ export class KumoPlatformAccessory {
 
   async handleFanActiveSet(value, callback) {
     // logic to set active on fan 
-    let command: Record<string, unknown> | undefined;   
+    let command: Record<string, unknown> | undefined;
+    let commandDirect: Record<string, unknown> | undefined;   
     if(value === 0) {
       // fan to auto
       command = {'fanSpeed':0};
+      commandDirect = {'fanSpeed':'auto'};
     } else if(value === 1) {    
       // check power status
       if(await this.updateDevice()) {
-        if(this.accessory.context.device.power === 1 && this.accessory.context.device.fan_speed === 0) {
-          // set fanSpeed
-          command = {'fanSpeed':1};  
+        if(
+          (this.accessory.context.device.power === 1 && this.accessory.context.device.fan_speed === 0) ||
+          (this.accessory.context.device.mode !== 'off' && this.accessory.context.device.fanSpeed === 'auto')
+        ) {
+          // if power ON and fan speed = AUTO,set fan speed from auto to superQuiet:1
+          command = {'fanSpeed':1}; 
+          commandDirect = {'fanSpeed':'superQuiet'}; 
           this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-        } else {
-          // set power to on, operationMode to 7 and fanSpeed
+        } else if (this.accessory.context.device.power === 0 || this.accessory.context.device.mode === 'off' ) {
+          // if power OFF, set power to on, operationMode to 7 (vent) and fanSpeed to superQuiet:1
           command = {'power':1, 'operationMode':7, 'fanSpeed':1};
+          commandDirect = {'mode':'vent', 'fanSpeed':'superQuiet'};
           this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.On, 1);
           this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
         }
@@ -355,8 +432,12 @@ export class KumoPlatformAccessory {
     }
 
     // only issue a command if not null
-    if(command !== undefined) {
-      this.platform.kumo.execute(this.accessory.context.serial, command);    
+    if(command !== undefined || commandDirect !== undefined) {
+      if(command !== undefined && !this.platform.config.directAccess) {
+        this.platform.kumo.execute(this.accessory.context.serial, command);
+      } else if (commandDirect !== undefined && this.platform.config.directAccess) {
+        this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+      }
       this.lastupdate = Date.now();
       this.platform.log.info('Fan: set Active to %s.', value);
     }
@@ -368,10 +449,27 @@ export class KumoPlatformAccessory {
 
     if(await this.updateDevice()) {
       // retrieve fan_speed
-      const fan_speed = this.accessory.context.device.fan_speed;
-      this.platform.log.debug('fan_speed:', fan_speed);
+      const fan_speed: number = this.accessory.context.device.fan_speed;
+      const fanSpeed: string = this.accessory.context.device.fanSpeed;
 
-      currentValue = (fan_speed - 1) * 20;
+      // fanSpeed decoder ring.
+      const fanStateMap: {[index: string]: number} = {
+        auto: 0,
+        superQuiet: 1,
+        quiet: 2,
+        low: 3,
+        powerful: 5,
+        superPowerful: 6,
+      };
+
+      if (!fan_speed === undefined) {
+        this.platform.log.debug('fan_speed:', fan_speed);
+        currentValue = (fan_speed - 1) * 20;
+      } else {
+        this.platform.log.debug('fanSpeed:', fanSpeed);
+        currentValue = (fanStateMap[fanSpeed] - 1) * 20;  
+      }
+
       this.platform.log.debug('Triggered GET handleFanRotationSpeed:', currentValue);
     }
 
@@ -387,8 +485,26 @@ export class KumoPlatformAccessory {
     // only send command if fan_speed has changed
     if(speed !== speed_old) {
       // send comand to update fanSpeed    
-      const command: Record<string, unknown> = {'fanSpeed':speed};
-      this.platform.kumo.execute(this.accessory.context.serial, command);    
+      const command: Record<string, number> = {'fanSpeed':speed};
+
+      // fanSpeed decoder ring.
+      const fanStateMap: {[index: number]: string} = {
+        0: 'auto',
+        1: 'superQuiet',
+        2: 'quiet',
+        3: 'low',
+        5: 'powerful',
+        6: 'superPowerful',
+      };
+
+      const commandDirect: Record<string, string> = {'fanSpeed':fanStateMap[speed]};
+      this.platform.log.info('commandDirect: %s.', commandDirect);
+
+      if(!this.platform.config.directAccess) {
+        this.platform.kumo.execute(this.accessory.context.serial, command);
+      } else {
+        this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+      }
       this.platform.log.info('Fan: set RotationSpeed from %s to %s.', speed_old, speed);
     }
     this.lastupdate = Date.now();
@@ -402,8 +518,10 @@ export class KumoPlatformAccessory {
       // retrieve air_direction
       const air_direction: number = this.accessory.context.device.air_direction;
       this.platform.log.debug('air_direction:', air_direction);
+      const vaneDir: string = this.accessory.context.device.vaneDir;
+      this.platform.log.debug('vaneDir:', vaneDir);
 
-      if(air_direction === 7) {
+      if(air_direction === 7 || vaneDir === 'swing') {
         currentValue = this.platform.Characteristic.SwingMode.SWING_ENABLED;
       } else {
         currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
@@ -417,23 +535,38 @@ export class KumoPlatformAccessory {
   
   handleFanSwingModeSet (value, callback) {
     let command: Record<string, unknown> | undefined;
+    let commandDirect: Record<string, unknown> | undefined;
     if(value === this.platform.Characteristic.SwingMode.SWING_ENABLED){
       command = {'airDirection':7};
+      commandDirect = {'vaneDir':'swing'};
     } else {
       command = {'airDirection':0};
+      commandDirect = {'vaneDir':'auto'};
     }
 
-    this.platform.kumo.execute(this.accessory.context.serial, command); 
+    if(!this.platform.config.directAccess) {
+      this.platform.kumo.execute(this.accessory.context.serial, command);
+    } else {
+      this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+    }
     this.lastupdate = Date.now();
     this.platform.log.info('Fan: set Swing to %s.', value);  
     callback(null);
   }
 
   async handlePowerSwitchOnGet(callback) {
-    let currentValue: number = <number>this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On).value;
+    let currentValue: boolean = <boolean>this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On).value;
 
     if(await this.updateDevice()) {
-      currentValue = this.accessory.context.device.power;
+      const power: number = this.accessory.context.device.power;
+      this.platform.log.debug('power: %s', power);
+      const mode: string = this.accessory.context.device.mode;
+      this.platform.log.debug('mode: %s', mode);
+      if (power === 0 || mode === 'off') {
+        currentValue = false;
+      } else {
+        currentValue = true;
+      }
       this.platform.log.debug('Triggered GET PowerSwitch Active:', currentValue);
     }
     
@@ -442,8 +575,10 @@ export class KumoPlatformAccessory {
 
   handlePowerSwitchOnSet(value, callback) {
     let command: Record<string, unknown> | undefined;
+    let commandDirect: Record<string, unknown> | undefined;
     if(!value) {
       command = {'power':0, 'operationMode':16};
+      commandDirect = {'mode':'off'};
       // turn off other services to refect power off
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
       this.Fan.updateCharacteristic(this.platform.Characteristic.Active, 0);
@@ -451,16 +586,24 @@ export class KumoPlatformAccessory {
     } else {
       // turn on Fan with auto fanSpeed and airDirection
       command = {'power':1, 'operationMode':7, 'fanSpeed':0, 'airDirection':0};
+      commandDirect = {'mode':'vent', 'fanSpeed':'superQuiet', 'vaneDir':'auto'}; 
+      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.Active, 1);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, 
+        this.platform.Characteristic.SwingMode.SWING_DISABLED);
     }
-
-    if(command !== undefined) {
+  
+    if(!this.platform.config.directAccess) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
-      this.lastupdate = Date.now();
-      this.platform.log.info('PowerSwitch: set Active to %s.', value);  
+    } else {
+      this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
+    this.lastupdate = Date.now();
+    this.platform.log.info('PowerSwitch: set Active to %s.', value);  
+    
     callback(null);
   }
-
 }
 
 

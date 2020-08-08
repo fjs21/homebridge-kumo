@@ -1,7 +1,6 @@
 import { Logger } from 'homebridge';
 import fetch from 'node-fetch';
 import util from 'util';
-import CryptoJS from 'crypto-js';
 
 import sjcl from 'sjcl';
 import base64 from 'base-64';
@@ -48,15 +47,29 @@ interface KumoDeviceInterface {
 
 export type KumoDevice = Readonly<KumoDeviceInterface>;
 
+interface KumoDeviceDirectInterface {
+  active_thermistor: string,
+  defrost: boolean,
+  fanSpeed: string,
+  filterDirty: boolean,
+  hotAdjust: boolean,
+  mode: string,
+  roomTemp: number,
+  runTest: number,
+  spCool: number,
+  spHeat: number,
+  standby: boolean,
+  tempSource: string,
+  vaneDir: string,
+}
+
+export type KumoDeviceDirect = Readonly<KumoDeviceDirectInterface>;
+
 // Renew Kumo security credentials every so often, in hours.
 const KumoTokenExpirationWindow = KUMO_API_TOKEN_REFRESH_INTERVAL * 60 * 60 * 1000;
 
-// constants for direct device connection.
-const W_PARAM = new util.TextEncoder().encode(KUMO_KEY);
-const S_PARAM = 0;
-
 export class KumoApi {
-  Devices!: Array<KumoDevice>;
+  //Devices!: Array<KumoDevice>;
   devices;
 
   private username: string;
@@ -183,7 +196,7 @@ export class KumoApi {
     return true;
   }
 
-  async queryDevice(log: Logger, serial: string) {
+  async queryDevice(serial: string) {
     // Validate and potentially refresh our security token.
     if(!(await this.checkSecurityToken())) {
       return null as unknown as KumoDevice;
@@ -199,7 +212,7 @@ export class KumoApi {
     const data = await response.json();
 
     if(!data || !data[2]) {
-      log.warn('Kumo API: error querying device: %s.', serial);
+      this.log.warn('Kumo API: error querying device: %s.', serial);
       return null as unknown as KumoDevice;
     }
 
@@ -236,14 +249,14 @@ export class KumoApi {
     }
 
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
-    if(data[2][0][0] != serial){
+    if(data[2][0][0] !== serial){
       this.log.warn('Kumo API: Bad response.');
     }
 
     return true;
   }
 
-  async infrequentQuery(log: Logger, serial: string) {
+  async infrequentQuery(serial: string) {
     // Validate and potentially refresh our security token.
     if(!(await this.checkSecurityToken())) {
       return false;
@@ -259,7 +272,7 @@ export class KumoApi {
     const data = await response.json();
 
     if(!data) {
-      log.warn('Kumo API: error querying device: %s.', serial);
+      this.log.warn('Kumo API: error querying device: %s.', serial);
       return false;
     }
 
@@ -269,7 +282,40 @@ export class KumoApi {
   }
 
   // ImplementDirectAccess
-  async queryDevice_Direct(log: Logger, serial: string) {  
+  async queryDevice_Direct(serial: string) {  
+    
+    const data = await this.directRequest('{"c":{"indoorUnit":{"status":{}}}}', serial);
+    let device: KumoDeviceDirect;
+    if(!data){
+      return null as unknown as KumoDeviceDirect;
+    }
+
+    try {
+      device = <KumoDeviceDirect>data.r.indoorUnit.status;  
+    } catch {
+      this.log.warn('Kump API: bad response from queryDevice_Direct - %s', data);
+      return null as unknown as KumoDeviceDirect;
+    }
+    return device;    
+  }
+
+  // Execute an action DIRECTLY on a Kumo device.
+  async execute_Direct(serial: string, command: Record<string, unknown>): Promise<boolean> {
+    const post_data = '{"c":{"indoorUnit":{"status":' + JSON.stringify(command) + '}}}';
+    this.log.debug('post_data: %s.', post_data);
+    const data = await this.directRequest(post_data, serial);
+
+    if(!data) {
+      this.log.warn('Kumo API: Failed to send command directly to device (Serial: %s).', serial);
+      return false;
+    }
+
+    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
+    return true;
+  }
+
+  // sends request
+  private async directRequest(post_data: string, serial: string) {
     let zoneTable; 
     for (const device of this.devices) {
       if (device.serial === serial){
@@ -277,123 +323,94 @@ export class KumoApi {
       }
     }
     const address: string = zoneTable.address;
-    const cryptoSerial: string = zoneTable.cryptoSerial; // KCS
-    const password: string = zoneTable.password; // Kcryptopassword
+    const cryptoSerial: string = zoneTable.cryptoSerial; 
+    const password: string = zoneTable.password; 
     
     const url = 'http://' + address + '/api?m=' +
-      this.encodeToken('{"c":{"indoorUnit":{"status":{}}}}', password, cryptoSerial);
-    //log.info('url_encodeToken:', url);
-    const url1 = 'http://' + address + '/api?m=' +
-      this.encodeToken1('{"c":{"indoorUnit":{"status":{}}}}', password, cryptoSerial);
-    //log.info('url_encodeToken1:', url1)
-    /*
-    if(!(await this.checkSecurityToken())) {
-      return null as unknown as KumoDevice;
-    }
+      this.encodeToken(post_data, password, cryptoSerial);
+    //log.debug('url_encodeToken:', url);
+
+    let data;
 
     // Get Device Information
-    const response = await fetch(KUMO_DEVICE_UPDATES_URL, {
-      method: 'POST',
-      headers: this.headers,
-      body: JSON.stringify([this.securityToken, [serial]]),
-    });
 
-    const data = await response.json();
-
-    if(!data || !data[2]) {
-      log.warn('Kumo API: error querying device: %s.', serial);
-      return null as unknown as KumoDevice;
+    // catch any errors that fetch throws - i.e. timeout
+    try {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {'Accept': 'application/json, text/plain, */*',
+          'Content-Type': 'application/json'},
+        body: post_data,
+        retry: 3,
+        callback: retry => {
+          this.log.debug('Retrying %s.', retry); 
+        },
+      });
+      // check response from server
+      if (response.status >= 200 && response.status <= 299) {
+        data = await response.json();
+      } else {
+        this.log.warn('Kumo API: response error from device: %s', serial);
+        return null; 
+      } 
+    } catch {
+      // if fetch throws error 
+      this.log.warn('queryDevice_Direct error.');
+      return null;  
+    }
+    
+    if (!data || data == '{ _api_error: \'device_authentication_error\' }') {
+      this.log.warn('Kumo API: error direct querying device: %s.', serial);
+      return null;
     }
 
     //this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
-
-    const device: KumoDevice = data[2][0][0];
-
-    return device;
-    */
+    return data;
   }
 
   private encodeToken(post_data, password, cryptoSerial) {
-    //const data_hash = hashlib.sha256(password + post_data).digest();
-    const data_hash = CryptoJS.SHA256(password + post_data);
-    //console.log(data_hash);
-    /*
-    //let intermediate = bytearray(88);
-    let intermediate = new Uint8Array(88);
-    //intermediate[0:32] = W_PARAM[0:32]
-    //intermediate[32:64] = data_hash[0:32]
-    for (let i = 0; i <= 32; i++) {
-      intermediate[i] = W_PARAM[i];
-      intermediate[i + 32] = data_hash[i];
-    }
-    //intermediate[64:66] = bytearray.fromhex("0840")
-    for (let i = 64; i <= 66; i++) {
-      intermediate[i] = 0x0840;
-    }
-    intermediate[66] = S_PARAM;
-    const cryptoserial = new TextEncoder.encode(cryptoSerial)
-    intermediate[79] = cryptoserial[8];
-    //intermediate[80:84] = cryptoSerial[4:8]
-    //intermediate[84:88] = cryptoSerial[0:4]
-    for (let i = 0; i <= 4; i++) {
-      intermediate[i + 80] = cryptoserial[i];
-      intermediate[i + 84] = cryptoserial[i + 4];
-    }
-    console.log(intermediate);
-    //const token = hashlib.sha256(intermediate).hexdigest();
-    const token = CryptoJS.SHA256(intermediate).toString();
-
-    return token;
-    */
-  }
-
-  private encodeToken1(post_data, password, cryptoSerial) {
+    // calcuate a token - based on pykumo and homebridge-kumo-local
     const W = this.h2l(KUMO_KEY);
     const p = base64.decode(password);
-    const dta = post_data;
-    const dt1 = sjcl.codec.hex.fromBits(
+    
+    const data_hash = sjcl.codec.hex.fromBits(
       sjcl.hash.sha256.hash(
         sjcl.codec.hex.toBits(
           this.l2h(
-            Array.prototype.map.call(p + dta, (m2) => {
+            Array.prototype.map.call(p + post_data, (m2) => {
               return m2.charCodeAt(0);
             }),
           ),
         ),
       ),
     );
-    //console.log(dt1);
-    /*
-    let dt1_l: any = this.h2l(dt1);
-    let dt2 = '';
-    for (let i = 0; i < 88; i++) {
-        dt2 += '00'
+    // convert data_hash to byteArray
+    const data_hash_byteArray = this.h2l(data_hash);
+ 
+    const intermediate = new Uint8Array(88);
+    for (let i = 0; i < 32; i++) {
+      intermediate[i] = W[i];
+      intermediate[i + 32] = data_hash_byteArray[i];
     }
-    let dt3: any = this.h2l(dt2);
-    dt3[64] = 8;
-    dt3[65] = 64;
-    Array.prototype.splice.apply(dt3, [32, 32].concat(dt1_l));
-    dt3[66] = 0;
-    let cryptoserial = this.h2l(cryptoSerial);
-    dt3[79] = cryptoserial[8];
-    dt3[80] = cryptoserial[4];
-    dt3[81] = cryptoserial[5];
-    dt3[82] = cryptoserial[6];
-    dt3[83] = cryptoserial[7];
-    dt3[84] = cryptoserial[0];
-    dt3[85] = cryptoserial[1];
-    dt3[86] = cryptoserial[2];
-    dt3[87] = cryptoserial[3];
-    Array.prototype.splice.apply(dt3, [0, 32].concat(W));
-    let hash = sjcl.codec.hex.fromBits(
-        sjcl.hash.sha256.hash(sjcl.codec.hex.toBits(this.l2h(dt3)))
-    )
-    //this.log('hash: %s', hash);
-    //this.log('kumo command: %s', dt);
+    intermediate[64] = 8;
+    intermediate[65] = 64;
+    intermediate[66] = 0; //S_PARAM
+    
+    // convert cryptoSerial to byte array
+    const cryptoserial = this.h2l(cryptoSerial);
+
+    intermediate[79] = cryptoserial[8];
+    for (let i = 0; i < 4; i++) {
+      intermediate[i + 80] = cryptoserial[i + 4];
+      intermediate[i + 84] = cryptoserial[i];
+    }
+    const hash = sjcl.codec.hex.fromBits(
+      sjcl.hash.sha256.hash(sjcl.codec.hex.toBits(this.l2h(intermediate))),
+    );
     return hash;
-    */
   }
 
+  // convert hexstring to byteArray
   private h2l (dt) {
     const r: any = [];
     for (let i = 0; i < dt.length; i += 2) {
@@ -402,8 +419,9 @@ export class KumoApi {
     return r;
   }
 
+  // convert from byteArray to hexstring 
   private l2h (l) {
-    let r: any = '';
+    let r = '';
     for (let i = 0; i < l.length; ++i) {
       const c = l[i];
       if (c < 16) {
