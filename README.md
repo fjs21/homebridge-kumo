@@ -42,7 +42,8 @@ sudo npm install -g homebridge-kumo
 ```
 
 ### Changelog
-Not yet implemented as this is first public version.
+v.1.1.1 included support for multiple "sites" on kumo cloud. All devices are currently incoportaed into Homebridge. This could be easily customized in the future if multiple homes were controlled by a single kumo account. 
+v.1.1.x includes control via direct IP connection from Homebridge to device. This is much faster than via the kumo cloud API. The kumo cloud is still queried on start up for list of devices and information needed to configure them. 
 
 ## Plugin Configuration
 If you choose to configure this plugin directly instead of using the [Homebridge Configuration web UI](https://github.com/oznu/homebridge-config-ui-x), you'll need to add the platform to your `config.json` in your home directory inside `.homebridge`.
@@ -51,14 +52,15 @@ If you choose to configure this plugin directly instead of using the [Homebridge
 "platforms": [{
     "platform": "Kumo",
     "username": "email@email.com",
-    "password": "password"
+    "password": "password",
+    "directAccess": true
 }]
 ```
 
 For most people, I recommend using [Homebridge Configuration web UI](https://github.com/oznu/homebridge-config-ui-x) to configure this plugin rather than doing so directly. It's easier to use for most users, especially newer users, and less prone to typos, leading to other problems.
 
 ## Credits
-This plugin used many cues from [homebridge-myq2](https://github.com/hjdhjd/homebridge-myq2/) for plugin structure and [homebridge-kumo](https://github.com/mikaelnelson/homebridge-kumo) for getting started with the Kumo API.
+This plugin used many cues from [homebridge-myq2](https://github.com/hjdhjd/homebridge-myq2/) for plugin structure and [homebridge-kumo](https://github.com/mikaelnelson/homebridge-kumo) for getting started with the Kumo API. In v.1.1, I have incorporated information from [pykumo](https://github.com/dlarrick/pykumo) and [homebridge-kumo-local](https://github.com/monteroman/homebridge-kumo-local) to allow direct IP and *rapid* control of devices on the network. 
 
 ## Donate to Support homebridge-kumo
 This plugin was made with you in mind. If you would like to show your appreciation for its continued development, please consider making [a small donation](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Y7PRYWBYVLMS2&item_name=homebridge-kumo&currency_code=USD&source=url).
