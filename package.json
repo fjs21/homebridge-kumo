@@ -1,6 +1,6 @@
 {
   "private": false,
-  "displayName": "homebridge-kumo",
+  "displayName": "Homebridge Kumo",
   "name": "homebridge-kumo",
   "version": "1.1.4",
   "description": "Connect to devices on Kumo cloud.",
