@@ -42,7 +42,7 @@ sudo npm install -g homebridge-kumo
 ```
 
 ### Changelog
-v.1.1.1 included support for multiple "sites" on kumo cloud. All devices are currently incoportaed into Homebridge. This could be easily customized in the future if multiple homes were controlled by a single kumo account. 
+v.1.1.1 included support for multiple "sites" on kumo cloud. All devices are currently incorporated into Homebridge. This could be easily customized in the future if multiple homes were controlled by a single kumo account. 
 v.1.1.x includes control via direct IP connection from Homebridge to device. This is much faster than via the kumo cloud API. The kumo cloud is still queried on start up for list of devices and information needed to configure them. 
 
 ## Plugin Configuration
