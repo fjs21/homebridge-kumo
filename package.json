@@ -38,5 +38,9 @@
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.5"
+  },
+  "funding": {
+    "type" : "paypal",
+    "url" : "https://paypal.me/fjs21"
   }
 }
