@@ -4,7 +4,7 @@ import { KumoDevice, KumoDeviceDirect } from './kumo-api';
 
 import { KumoHomebridgePlatform } from './platform';
 
-import { KUMO_LAG } from './settings';
+import { KUMO_LAG, KUMO_DEVICE_WAIT } from './settings';
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
@@ -102,7 +102,7 @@ export class KumoPlatformAccessory {
     } else {
       // queryDevice via Direct IP connection
       // only update if data is more than one second old - prevents spamming the device
-      if ((Date.now() - 1000) < this.lastquery) {
+      if ((Date.now() - KUMO_DEVICE_WAIT) < this.lastquery) {
         this.platform.log.debug('Recent update from device already performed.');
         return true; //ok to use current data in context to update Characteristic values
       }
@@ -327,9 +327,13 @@ export class KumoPlatformAccessory {
     
     if(value<minCoolSetpoint) {
       value = minCoolSetpoint;
-      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, minCoolSetpoint);
+    } else {
+      this.platform.log.debug('spCool C:', value);
+      value = this.roundHalf(value);
+      this.platform.log.debug('rounded to:', value);
     }
-    
+    this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, minCoolSetpoint);
+
     const command: Record<string, unknown> = {'spCool':value};
     const commandDirect: Record<string, unknown> = {'spCool':value};
     
@@ -348,8 +352,12 @@ export class KumoPlatformAccessory {
 
     if(value>maxHeatSetpoint) {
       value = maxHeatSetpoint;
-      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, maxHeatSetpoint);
+    } else {
+      this.platform.log.debug('spHeat C:', value);
+      value = this.roundHalf(value);
+      this.platform.log.debug('rounded to:', value);
     }
+    this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, maxHeatSetpoint);
 
     const command: Record<string, unknown> = {'spHeat':value};
     const commandDirect: Record<string, unknown> = {'spHeat':value};
@@ -603,6 +611,10 @@ export class KumoPlatformAccessory {
     this.platform.log.info('PowerSwitch: set Active to %s.', value);  
     
     callback(null);
+  }
+
+  private roundHalf(num: number) {
+    return Math.round(num*2)/2;
   }
 }
 
