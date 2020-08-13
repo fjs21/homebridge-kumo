@@ -2,7 +2,7 @@
   "private": false,
   "displayName": "Homebridge Kumo",
   "name": "homebridge-kumo",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Connect to devices on Kumo cloud.",
   "license": "Apache-2.0",
   "repository": "github:fjs21/homebridge-kumo",
@@ -40,7 +40,7 @@
     "typescript": "^3.9.5"
   },
   "funding": {
-    "type" : "paypal",
-    "url" : "https://paypal.me/fjs21"
+    "type": "paypal",
+    "url": "https://paypal.me/fjs21"
   }
 }
