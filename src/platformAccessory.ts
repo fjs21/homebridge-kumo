@@ -330,8 +330,8 @@ export class KumoPlatformAccessory {
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, minCoolSetpoint);
     }
     
-    const command: Record<string, unknown> = {'spCool':Math.floor(value)};
-    const commandDirect: Record<string, unknown> = {'spCool':Math.floor(value)};
+    const command: Record<string, unknown> = {'spCool':value};
+    const commandDirect: Record<string, unknown> = {'spCool':value};
     
     if(!this.platform.config.directAccess) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
@@ -351,8 +351,8 @@ export class KumoPlatformAccessory {
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, maxHeatSetpoint);
     }
 
-    const command: Record<string, unknown> = {'spHeat':Math.floor(value)};
-    const commandDirect: Record<string, unknown> = {'spHeat':Math.floor(value)};
+    const command: Record<string, unknown> = {'spHeat':value};
+    const commandDirect: Record<string, unknown> = {'spHeat':value};
 
     if(!this.platform.config.directAccess) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
