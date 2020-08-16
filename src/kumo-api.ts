@@ -353,9 +353,9 @@ export class KumoApi {
         this.log.warn('Kumo API: response error from device: %s', serial);
         return null; 
       } 
-    } catch {
+    } catch(error) {
       // if fetch throws error 
-      this.log.warn('queryDevice_Direct error.');
+      this.log.warn('queryDevice_Direct error: %s.', error);
       return null;  
     }
     

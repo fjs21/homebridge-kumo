@@ -84,11 +84,13 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
         existingAccessory.context.zoneTable = device.zoneTable;
+        /*
         if (this.config.directAccess) {
           existingAccessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
         } else {
           existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
         }
+        */
         this.api.updatePlatformAccessories([existingAccessory]);
 
         // create the accessory handler for the restored accessory
@@ -106,11 +108,13 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         // the `context` property can be used to store any data about the accessory you may need
         accessory.context.serial = device.serial;
         accessory.context.zoneTable = device.zoneTable;
+        /*
         if (this.config.directAccess) {
           accessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
         } else {
           accessory.context.device = await this.kumo.queryDevice(device.serial);
         }
+        */
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`

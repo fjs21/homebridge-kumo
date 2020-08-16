@@ -5,6 +5,7 @@ import { KumoDevice, KumoDeviceDirect } from './kumo-api';
 import { KumoHomebridgePlatform } from './platform';
 
 import { KUMO_LAG, KUMO_DEVICE_WAIT } from './settings';
+
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
@@ -19,12 +20,13 @@ export class KumoPlatformAccessory {
   private lastupdate;
   private lastquery;
 
+  private directAccess;
+
   constructor(
     private readonly platform: KumoHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
   ) {
-    //
-    this.lastquery = Date.now();
+    this.directAccess = this.platform.config.directAccess;
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -81,13 +83,15 @@ export class KumoPlatformAccessory {
     this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On)
       .on('get', this.handlePowerSwitchOnGet.bind(this))
       .on('set', this.handlePowerSwitchOnSet.bind(this));
+  
+    this.updateDevice();
   }
   
   // As Device updates take some time to update need to check before updating HAP with stale data.
   async updateDevice() {
     // queryDevice and update context.device depending on last contact/update.
     let device: KumoDevice | KumoDeviceDirect;
-    if (!this.platform.config.directAccess){
+    if (!this.directAccess){
       // queryDevice via Kumo Cloud
       device = await this.platform.kumo.queryDevice(this.accessory.context.serial);   
 
@@ -104,14 +108,19 @@ export class KumoPlatformAccessory {
       // only update if data is more than one second old - prevents spamming the device
       if ((Date.now() - KUMO_DEVICE_WAIT) < this.lastquery) {
         this.platform.log.debug('Recent update from device already performed.');
+        if(!this.accessory.context.device) {
+          this.platform.log.warn('accessory context not set - bad IP? reverting to cloud control');
+          this.directAccess = false;
+          return false;
+        }
         return true; //ok to use current data in context to update Characteristic values
       }
       this.lastquery = Date.now(); // update time of last query     
      
       device = await this.platform.kumo.queryDevice_Direct(this.accessory.context.serial);
       if(!device) {
-        return false;
         this.platform.log.warn('queryDevice_Direct failed.');
+        return false;
       }
     }
 
@@ -189,9 +198,9 @@ export class KumoPlatformAccessory {
     }
 
     if(command !== undefined || commandDirect !== undefined) {
-      if(command !== undefined && !this.platform.config.directAccess) {
+      if(command !== undefined && !this.directAccess) {
         this.platform.kumo.execute(this.accessory.context.serial, command);
-      } else if (commandDirect !== undefined && this.platform.config.directAccess) {
+      } else if (commandDirect !== undefined && this.directAccess) {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
@@ -277,9 +286,9 @@ export class KumoPlatformAccessory {
 
     if(command !== undefined || commandDirect !== undefined) {
       this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.Active, 1);
-      if(command !== undefined && !this.platform.config.directAccess) {
+      if(command !== undefined && !this.directAccess) {
         this.platform.kumo.execute(this.accessory.context.serial, command);
-      } else if (commandDirect !== undefined && this.platform.config.directAccess) {
+      } else if (commandDirect !== undefined && this.directAccess) {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
@@ -337,7 +346,7 @@ export class KumoPlatformAccessory {
     const command: Record<string, unknown> = {'spCool':value};
     const commandDirect: Record<string, unknown> = {'spCool':value};
     
-    if(!this.platform.config.directAccess) {
+    if(!this.directAccess) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
     } else {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
@@ -362,7 +371,7 @@ export class KumoPlatformAccessory {
     const command: Record<string, unknown> = {'spHeat':value};
     const commandDirect: Record<string, unknown> = {'spHeat':value};
 
-    if(!this.platform.config.directAccess) {
+    if(!this.directAccess) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
     } else {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
@@ -397,8 +406,8 @@ export class KumoPlatformAccessory {
       const fan_auto: boolean = this.accessory.context.device.fanSpeed === 'auto';
 
       if(
-        (fan_speed > 0 && this.accessory.context.device.power === 1) ||
-        (!fan_auto && this.accessory.context.device.mode !== 'off')
+        (fan_speed > 0 && this.accessory.context.device.power === 1 && !this.directAccess) ||
+        (!fan_auto && this.accessory.context.device.mode !== 'off' && this.directAccess)
       ) {
         currentValue = 1;
       } else {
@@ -441,9 +450,9 @@ export class KumoPlatformAccessory {
 
     // only issue a command if not null
     if(command !== undefined || commandDirect !== undefined) {
-      if(command !== undefined && !this.platform.config.directAccess) {
+      if(command !== undefined && !this.directAccess) {
         this.platform.kumo.execute(this.accessory.context.serial, command);
-      } else if (commandDirect !== undefined && this.platform.config.directAccess) {
+      } else if (commandDirect !== undefined && this.directAccess) {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
@@ -470,7 +479,7 @@ export class KumoPlatformAccessory {
         superPowerful: 6,
       };
 
-      if (!fan_speed === undefined) {
+      if (!this.directAccess) {
         this.platform.log.debug('fan_speed:', fan_speed);
         currentValue = (fan_speed - 1) * 20;
       } else {
@@ -508,7 +517,7 @@ export class KumoPlatformAccessory {
       const commandDirect: Record<string, string> = {'fanSpeed':fanStateMap[speed]};
       this.platform.log.info('commandDirect: %s.', commandDirect);
 
-      if(!this.platform.config.directAccess) {
+      if(!this.directAccess) {
         this.platform.kumo.execute(this.accessory.context.serial, command);
       } else {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
@@ -552,7 +561,7 @@ export class KumoPlatformAccessory {
       commandDirect = {'vaneDir':'auto'};
     }
 
-    if(!this.platform.config.directAccess) {
+    if(!this.directAccess) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
     } else {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
@@ -602,7 +611,7 @@ export class KumoPlatformAccessory {
         this.platform.Characteristic.SwingMode.SWING_DISABLED);
     }
   
-    if(!this.platform.config.directAccess) {
+    if(!this.directAccess) {
       this.platform.kumo.execute(this.accessory.context.serial, command);
     } else {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
