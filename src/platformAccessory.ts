@@ -28,6 +28,17 @@ export class KumoPlatformAccessory {
   ) {
     this.directAccess = this.platform.config.directAccess;
 
+    // determine device profile and additional sensors to tailor accessory to
+    // the capabilities of the kumo device
+    // (not yet implemented)
+    if(this.directAccess) {
+      this.platform.kumo.queryDeviceProfile_Direct(this.accessory.context.serial);
+
+      this.platform.kumo.queryDeviceSensors_Direct(this.accessory.context.serial);
+
+      this.platform.kumo.queryDeviceAdapter_Direct(this.accessory.context.serial);
+    }
+
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')

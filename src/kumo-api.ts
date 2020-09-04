@@ -297,8 +297,6 @@ export class KumoApi {
       return null as unknown as KumoDeviceDirect;
     }
 
-    this.queryDeviceSensors_Direct(serial);
-
     return device;    
   }
 
@@ -325,16 +323,14 @@ export class KumoApi {
     }  
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
 
+    this.deviceSensors = [];
     try {
       const sensors = data.r.sensors;
-      this.log.info('Found sensors: %s', sensors);
-      for(const sensor in sensors) {
-         this.log.info('Found sensor: %s', sensor);
-      /*
-        if(sensor.uuid){
-          this.log.info('Found sensor: %s', sensor.uuid);
+      for(var sensor in sensors) {
+        if(sensors[sensor].uuid !== null && sensors[sensor].uuid !== undefined) {
+          this.log.debug('Found sensor.uuid: %s', sensors[sensor].uuid);
+          this.deviceSensors.push(sensors[sensor].uuid);
         }
-      */
       }
 
     } catch {
@@ -342,7 +338,33 @@ export class KumoApi {
       return null
     }
 
-    return true;    
+    return this.deviceSensors;    
+  }
+
+  // querying device profile (not implemented yet)
+  async queryDeviceProfile_Direct(serial: string) {
+    const data = await this.directRequest('{"c":{"indoorUnit":{"profile":{}}}}', serial);
+    if(!data){
+      return null;
+    }  
+    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 4 }));
+
+    const profile = data.r.indoorUnit.profile;
+
+    return profile;    
+  }
+
+  // querying device adapter (not implemented yet)
+  async queryDeviceAdapter_Direct(serial: string) {
+    const data = await this.directRequest('{"c":{"adapter":{"status":{}}}}', serial);
+    if(!data){
+      return null;
+    }  
+    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 5 }));
+
+    const adapter = data.r.adapter.status;
+
+    return adapter;    
   }
 
   // sends request
