@@ -296,6 +296,9 @@ export class KumoApi {
       this.log.warn('Kump API: bad response from queryDevice_Direct - %s', data);
       return null as unknown as KumoDeviceDirect;
     }
+
+    queryDeviceSensors_Direct();
+
     return device;    
   }
 
@@ -312,6 +315,45 @@ export class KumoApi {
 
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
     return true;
+  }
+
+  // querying sensors
+  async queryDeviceSensors_Direct(serial: string) {
+    const data = await this.directRequest('{"c":{"sensors":{}}}', serial);
+    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
+    
+    /*
+    let device: KumoDeviceDirect;
+    if(!data){
+      return null as unknown as KumoDeviceDirect;
+    }
+
+    try {
+      device = <KumoDeviceDirect>data.r.indoorUnit.status;  
+    } catch {
+      this.log.warn('Kump API: bad response from queryDevice_Direct - %s', data);
+      return null as unknown as KumoDeviceDirect;
+    }
+    */
+    return true;    
+  }
+
+  // querying sensors
+  async queryDeviceSensors_Direct(serial: string)
+    const data = await this.directRequest('{"c":{"sensors":{}}}', serial);
+    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
+    //let device: KumoDeviceDirect;
+    if(!data){
+      //return null as unknown as KumoDeviceDirect;
+    }
+
+    try {
+      //device = <KumoDeviceDirect>data.r.indoorUnit.status;  
+    } catch {
+      this.log.warn('Kump API: bad response from queryDevice_Direct - %s', data);
+      return null as unknown as KumoDeviceDirect;
+    }
+    //return device;    
   }
 
   // sends request
