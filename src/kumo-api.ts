@@ -1,5 +1,5 @@
 import { Logger } from 'homebridge';
-import fetch from 'node-fetch';
+import fetchTimeout from 'fetch-timeout';
 import util from 'util';
 
 import sjcl from 'sjcl';
@@ -111,11 +111,11 @@ export class KumoApi {
     this.lastAuthenticateCall = now;
 
     // Login to the myQ API and get a security token for our session.
-    const response = await fetch(KUMO_LOGIN_URL, {
+    const response = await fetchTimeout(KUMO_LOGIN_URL, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({'username':this.username, 'password':this.password, 'appVersion':'2.2.0'}),
-    });
+    }, 5000, 'Time out on Kumo cloud connection.');
 
     if(!response) {
       this.log.warn('Kumo API: Unable to authenticate. Will try later.');
@@ -202,14 +202,26 @@ export class KumoApi {
       return null as unknown as KumoDevice;
     }
 
+    let data;
     // Get Device Information
-    const response = await fetch(KUMO_DEVICE_UPDATES_URL, {
-      method: 'POST',
-      headers: this.headers,
-      body: JSON.stringify([this.securityToken, [serial]]),
-    });
-
-    const data = await response.json();
+    try{
+      const response = await fetchTimeout(KUMO_DEVICE_UPDATES_URL, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify([this.securityToken, [serial]]),
+      }, 10000, 'Time out on Kumo cloud connection.');
+      // check response from server
+      if (response.status >= 200 && response.status <= 299) {
+        data = await response.json();
+      } else {
+        this.log.warn('Kumo API: response error: %s', serial);
+        return null as unknown as KumoDevice; 
+      } 
+    } catch(error) {
+      // if fetch throws error 
+      this.log.warn('Kumo API: queryDevice error: %s.', error);
+      return null as unknown as KumoDevice;  
+    }
 
     if(!data || !data[2]) {
       this.log.warn('Kumo API: error querying device: %s.', serial);
@@ -217,7 +229,6 @@ export class KumoApi {
     }
 
     //this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
-
     const device: KumoDevice = data[2][0][0];
 
     return device;
@@ -234,11 +245,11 @@ export class KumoApi {
     dict[serial]=command;
     this.log.debug(JSON.stringify([this.securityToken, dict]));
 
-    const response = await fetch(KUMO_DEVICE_EXECUTE_URL, {
+    const response = await fetchTimeout(KUMO_DEVICE_EXECUTE_URL, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify([this.securityToken, dict]),
-    });
+    }, 5000, 'Time out on Kumo cloud connection.');
 
     const data = await response.json();
 
@@ -263,11 +274,11 @@ export class KumoApi {
     }
 
     // Get Device Information
-    const response = await fetch(KUMO_DEVICE_INFREQUENT_UPDATES_URL, {
+    const response = await fetchTimeout(KUMO_DEVICE_INFREQUENT_UPDATES_URL, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify([this.securityToken, [serial]]),
-    });
+    }, 5000, 'Time out on Kumo cloud connection.');
 
     const data = await response.json();
 
@@ -323,13 +334,14 @@ export class KumoApi {
     }  
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
 
-    this.deviceSensors = [];
+    var deviceSensors = [] as any;
     try {
       const sensors = data.r.sensors;
       for(var sensor in sensors) {
         if(sensors[sensor].uuid !== null && sensors[sensor].uuid !== undefined) {
           this.log.debug('Found sensor.uuid: %s', sensors[sensor].uuid);
-          this.deviceSensors.push(sensors[sensor].uuid);
+          const uuid:string = sensors[sensor].uuid;
+          deviceSensors.push(uuid);
         }
       }
 
@@ -338,7 +350,7 @@ export class KumoApi {
       return null
     }
 
-    return this.deviceSensors;    
+    return deviceSensors;    
   }
 
   // querying device profile (not implemented yet)
@@ -349,7 +361,13 @@ export class KumoApi {
     }  
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 4 }));
 
-    const profile = data.r.indoorUnit.profile;
+    let profile: any = undefined;
+    try {
+      profile = data.r.indoorUnit.profile;
+    } catch {
+      this.log.warn('Kumo API: bad response from queryDeviceProfile_Direct - %s', data);
+      return null;
+    }
 
     return profile;    
   }
@@ -362,7 +380,13 @@ export class KumoApi {
     }  
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 5 }));
 
-    const adapter = data.r.adapter.status;
+    let adapter: any = undefined;
+    try {
+      const adapter = data.r.adapter.status;
+    } catch {
+      this.log.warn('Kumo API: bad response from queryDeviceAdapter_Direct - %s', data);
+      return null
+    }
 
     return adapter;    
   }
@@ -381,7 +405,7 @@ export class KumoApi {
     
     const url = 'http://' + address + '/api?m=' +
       this.encodeToken(post_data, password, cryptoSerial);
-    //log.debug('url_encodeToken:', url);
+    //this.log.debug('url: %s', url);
 
     let data;
 
@@ -389,16 +413,12 @@ export class KumoApi {
 
     // catch any errors that fetch throws - i.e. timeout
     try {
-      const response = await fetch(url, {
+      const response = await fetchTimeout(url, {
         method: 'PUT',
         headers: {'Accept': 'application/json, text/plain, */*',
           'Content-Type': 'application/json'},
         body: post_data,
-        retry: 3,
-        callback: retry => {
-          this.log.debug('Retrying %s.', retry); 
-        },
-      });
+      }, 5000, 'Time out on local IP connection.');
       // check response from server
       if (response.status >= 200 && response.status <= 299) {
         data = await response.json();

@@ -25,6 +25,8 @@
   ],
   "dependencies": {
     "base-64": "^0.1.0",
+    "fakegato-history": "^0.5.6",
+    "fetch-timeout": "0.0.2",
     "node-fetch": "^2.6.0",
     "sjcl": "^1.0.8"
   },
