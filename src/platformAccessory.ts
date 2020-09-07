@@ -103,14 +103,15 @@ export class KumoPlatformAccessory {
   
     this.updateDevice();
 
-    const historyInterval = 10; // history interval (minutes)
+    // setup interval for updating device for historyService
+    const historyInterval = 10; // history interval in minutes
 
     const FakeGatoHistoryService = fakegato(this.platform.api);
     this.historyService = new FakeGatoHistoryService('weather', this.accessory, {
-          storage: "fs",
-          minutes: historyInterval
-        });
-    this.historyService.name =  this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
+      storage: 'fs',
+      minutes: historyInterval,
+    });
+    this.historyService.name = this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
     this.historyService.log = this.platform.log;
 
     setInterval(() => {
@@ -124,12 +125,16 @@ export class KumoPlatformAccessory {
     await this.updateAccessoryCharacteristics();
     callback(null);
   }
+
   async updateAccessoryCharacteristics() {
-    // updateDevice
+    // updateAccessoryCharacteristics
+
+    // update context.device information from Kumo or Directly
     if(!await this.updateDevice()) { 
       return false;
     }
     
+    // update characteristics from context.device
     this.updateHeaterCoolerActive();
     this.updateCurrentHeaterCoolerState();
     this.updateTargetHeaterCoolerState();
@@ -200,24 +205,24 @@ export class KumoPlatformAccessory {
 
     let currentValue:number = <number>this.HeaterCooler.getCharacteristic(this.platform.Characteristic.Active).value;
     if (operation_mode === 16 || mode === 'off') {
-        // Unit inactive
-        currentValue = 0;
-      } else if (operation_mode === 7 || operation_mode === 2 
+      // Unit inactive
+      currentValue = 0;
+    } else if (operation_mode === 7 || operation_mode === 2 
           || mode === 'vent' || mode === 'dry') {
-        // Fan or Dehumidifier - set Active OFF
-        currentValue = 0;
-      } else if (operation_mode === 8 || mode === 'auto') {
-        // Auto Mode
-        currentValue = 1;
-      } else if (operation_mode === 1 || operation_mode === 33 
+      // Fan or Dehumidifier - set Active OFF
+      currentValue = 0;
+    } else if (operation_mode === 8 || mode === 'auto') {
+      // Auto Mode
+      currentValue = 1;
+    } else if (operation_mode === 1 || operation_mode === 33 
           || mode === 'heat' || mode === 'autoHeat') {
-        // Heating
-        currentValue = 1;
-      } else if (operation_mode === 3 || operation_mode === 35 
+      // Heating
+      currentValue = 1;
+    } else if (operation_mode === 3 || operation_mode === 35 
           || mode === 'cool' || mode === 'autoCool') {
-        // Cooling
-        currentValue = 1;
-      }
+      // Cooling
+      currentValue = 1;
+    }
     this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, currentValue);    
   }
 
@@ -293,8 +298,8 @@ export class KumoPlatformAccessory {
     // add history service entry
     this.historyService.addEntry({
       time: Date.now(),
-      temp: currentValue
-    })
+      temp: currentValue,
+    });
   }
   
   private updateFanActive() {
@@ -352,9 +357,9 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     }
     this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
-   }
+  }
   
- private updatePowerSwitchOn() {
+  private updatePowerSwitchOn() {
     // PowerSwitchOn
     const power: number = this.accessory.context.device.power;
     const mode: string = this.accessory.context.device.mode;

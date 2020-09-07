@@ -334,10 +334,10 @@ export class KumoApi {
     }  
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
 
-    var deviceSensors = [] as any;
+    const deviceSensors = [] as any;
     try {
       const sensors = data.r.sensors;
-      for(var sensor in sensors) {
+      for(const sensor in sensors) {
         if(sensors[sensor].uuid !== null && sensors[sensor].uuid !== undefined) {
           this.log.debug('Found sensor.uuid: %s', sensors[sensor].uuid);
           const uuid:string = sensors[sensor].uuid;
@@ -347,7 +347,7 @@ export class KumoApi {
 
     } catch {
       this.log.warn('Kumo API: bad response from queryDeviceSensors_Direct - %s', data);
-      return null
+      return null;
     }
 
     return deviceSensors;    
@@ -382,10 +382,10 @@ export class KumoApi {
 
     let adapter: any = undefined;
     try {
-      const adapter = data.r.adapter.status;
+      adapter = data.r.adapter.status;
     } catch {
       this.log.warn('Kumo API: bad response from queryDeviceAdapter_Direct - %s', data);
-      return null
+      return null;
     }
 
     return adapter;    
