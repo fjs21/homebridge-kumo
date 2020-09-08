@@ -23,5 +23,5 @@ export const KUMO_LAG = 10;
 
 export const KUMO_KEY = '44c73283b498d432ff25f5c8e06a016aef931e68f0a00ea710e36e6338fb22db';
 
-// do not poll device for fresh update more frequently than 1000ms
-export const KUMO_DEVICE_WAIT = 1000;
+// do not poll device for fresh update more frequently than 2000ms
+export const KUMO_DEVICE_WAIT = 2000;

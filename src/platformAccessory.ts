@@ -98,7 +98,6 @@ export class KumoPlatformAccessory {
       .on('set', this.handleFanSwingModeSet.bind(this));
 
     this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On)
-      .on('get', this.handleGet.bind(this))
       .on('set', this.handlePowerSwitchOnSet.bind(this));
   
     this.updateDevice();
