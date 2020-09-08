@@ -626,7 +626,6 @@ export class KumoPlatformAccessory {
     }
     this.lastupdate = Date.now();
     this.platform.log.info('PowerSwitch: set Active to %s.', value);  
-    
     callback(null);
   }
 
