@@ -111,7 +111,7 @@ export class KumoPlatformAccessory {
       minutes: historyInterval,
     });
     this.historyService.name = this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
-    this.historyService.log = this.platform.log;
+    //this.historyService.log = this.platform.log; // swicthed off to prevent flooding the log
 
     setInterval(() => {
       this.platform.log.debug('Running interval');

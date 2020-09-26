@@ -122,9 +122,16 @@ export class KumoApi {
       return false;
     }
 
-    // get security token
-    const data = await response.json();
-    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 5 }));
+    let data;
+    try{
+      // get security token
+      data = await response.json();
+      this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 5 }));
+    } catch(error) {
+      // if fetch throws error 
+      this.log.error('Kumo API: error parsing json. %s', data);
+      return false;
+    }
 
     // What we should get back upon successfully calling /Login is a security token for
     // use in future API calls this session.
