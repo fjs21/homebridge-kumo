@@ -176,7 +176,7 @@ export class KumoApi {
     this.devices.push(device);
     }
 
-    if(child.hasOwnProperty('children')){
+    if(Object.prototype.hasOwnProperty.call(child, 'children')){
       this.parseChild(child.children);
     }
   }
