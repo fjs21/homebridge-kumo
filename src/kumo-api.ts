@@ -146,17 +146,7 @@ export class KumoApi {
       // Find devices and serial numbers
       this.devices = [];
       for (const child of data[2].children) {
-        const zoneTable = child.zoneTable;
-        for (const serial in zoneTable) {
-          this.log.debug(`Serial: ${serial}`);
-          this.log.debug(`Label: ${zoneTable[serial].label}`);
-          const device = {
-            serial: serial,
-            label: zoneTable[serial].label,
-            zoneTable: zoneTable[serial],
-          };
-          this.devices.push(device);
-        }
+        this.parseChild(child);
       }  
       this.log.info('Number of devices found:', this.devices.length);
     }
@@ -170,6 +160,25 @@ export class KumoApi {
     //this.headers.SecurityToken = this.securityToken;
 
     return true;
+  }
+
+  private parseChild(this, child) {
+    this.log.debug('Parsing child: %s', child);
+    const zoneTable = child.zoneTable;
+    for (const serial in zoneTable) {
+      this.log.debug(`Serial: ${serial}`);
+      this.log.debug(`Label: ${zoneTable[serial].label}`);
+      const device = {
+        serial: serial,
+        label: zoneTable[serial].label,
+        zoneTable: zoneTable[serial],
+       };
+    this.devices.push(device);
+    }
+
+    if(child.hasOwnProperty('children')){
+      this.parseChild(child.children);
+    }
   }
 
   // Refresh the security token.
