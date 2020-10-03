@@ -172,8 +172,8 @@ export class KumoApi {
         serial: serial,
         label: zoneTable[serial].label,
         zoneTable: zoneTable[serial],
-       };
-    this.devices.push(device);
+      };
+      this.devices.push(device);
     }
 
     if(Object.prototype.hasOwnProperty.call(child, 'children')){
@@ -453,7 +453,7 @@ export class KumoApi {
       return null;
     }
 
-    //this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
+    this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
     return data;
   }
 
