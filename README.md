@@ -61,6 +61,3 @@ For most people, I recommend using [Homebridge Configuration web UI](https://git
 
 ## Credits
 This plugin used many cues from [homebridge-myq2](https://github.com/hjdhjd/homebridge-myq2/) for plugin structure and [homebridge-kumo](https://github.com/mikaelnelson/homebridge-kumo) for getting started with the Kumo API. In v.1.1, I have incorporated information from [pykumo](https://github.com/dlarrick/pykumo) and [homebridge-kumo-local](https://github.com/monteroman/homebridge-kumo-local) to allow direct IP and *rapid* control of devices on the network. 
-
-## Donate to Support homebridge-kumo
-This plugin was made with you in mind. If you would like to show your appreciation for its continued development, please consider making [a small donation](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Y7PRYWBYVLMS2&item_name=homebridge-kumo&currency_code=USD&source=url).
