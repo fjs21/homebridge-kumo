@@ -145,9 +145,7 @@ export class KumoApi {
       this.log.info('Kumo API: Successfully connected to the Kumo API.');
       // Find devices and serial numbers
       this.devices = [];
-      for (const child of data[2].children) {
-        this.parseChild(child);
-      }  
+      this.parseChildren(data[2].children);
       this.log.info('Number of devices found:', this.devices.length);
     }
 
@@ -162,22 +160,24 @@ export class KumoApi {
     return true;
   }
 
-  private parseChild(this, child) {
-    this.log.debug('Parsing child: %s', child);
-    const zoneTable = child.zoneTable;
-    for (const serial in zoneTable) {
-      this.log.debug(`Serial: ${serial}`);
-      this.log.debug(`Label: ${zoneTable[serial].label}`);
-      const device = {
-        serial: serial,
-        label: zoneTable[serial].label,
-        zoneTable: zoneTable[serial],
-      };
-      this.devices.push(device);
-    }
+  private parseChildren(this, children) {
+    this.log.debug('Parsing child: %s', util.inspect(children, { colors: true, sorted: true, depth: 3 }));
+    for (const child of children) {
+      const zoneTable = child.zoneTable;
+      for (const serial in zoneTable) {
+        this.log.debug(`Serial: ${serial}`);
+        this.log.debug(`Label: ${zoneTable[serial].label}`);
+        const device = {
+          serial: serial,
+          label: zoneTable[serial].label,
+          zoneTable: zoneTable[serial],
+        };
+        this.devices.push(device);
+      }
 
-    if(Object.prototype.hasOwnProperty.call(child, 'children')){
-      this.parseChild(child.children);
+      if(Object.prototype.hasOwnProperty.call(child, 'children')){
+        this.parseChildren(child.children);
+      }
     }
   }
 
