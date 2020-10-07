@@ -244,7 +244,7 @@ export class KumoApi {
       return null as unknown as KumoDevice;
     }
 
-    //this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
+    this.log.debug('Kumo response: %s', util.inspect(data, { colors: true, sorted: true, depth: 3 }));
     const device: KumoDevice = data[2][0][0];
 
     return device;
