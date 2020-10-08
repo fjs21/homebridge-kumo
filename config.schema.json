@@ -21,6 +21,10 @@
             "title": "Connect directly to devices?",
             "type": "boolean",
             "required": false
+        },
+       "funding": {
+            "type" : "github",
+            "url" : "https://github.com/sponsors/fjs21"
         }
     }
   }
