@@ -126,7 +126,7 @@ export class KumoApi {
     try{
       // get security token
       data = await response.json();
-      this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 5 }));
+      this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 6 }));
     } catch(error) {
       // if fetch throws error 
       this.log.error('Kumo API: error parsing json. %s', data);
