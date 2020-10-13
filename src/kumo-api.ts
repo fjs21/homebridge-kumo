@@ -111,11 +111,17 @@ export class KumoApi {
     this.lastAuthenticateCall = now;
 
     // Login to the myQ API and get a security token for our session.
-    const response = await fetchTimeout(KUMO_LOGIN_URL, {
-      method: 'POST',
-      headers: this.headers,
-      body: JSON.stringify({'username':this.username, 'password':this.password, 'appVersion':'2.2.0'}),
-    }, 5000, 'Time out on Kumo cloud connection.');
+    let response;
+    try{
+      response = await fetchTimeout(KUMO_LOGIN_URL, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify({'username':this.username, 'password':this.password, 'appVersion':'2.2.0'}),
+      }, 5000, 'Time out on Kumo cloud connection.');
+    } catch(error) {
+      this.log.error('Kumo API error: %s', error);
+      return false;
+    }
 
     if(!response) {
       this.log.warn('Kumo API: Unable to authenticate. Will try later.');
@@ -128,7 +134,7 @@ export class KumoApi {
       data = await response.json();
       this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 6 }));
     } catch(error) {
-      // if fetch throws error 
+      // if cannot parse response
       this.log.error('Kumo API: error parsing json. %s', data);
       return false;
     }

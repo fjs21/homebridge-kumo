@@ -4,6 +4,7 @@ import { KumoApi } from './kumo-api';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
 import { KumoPlatformAccessory } from './platformAccessory';
+import { KumoPlatformAccessory_ductless } from './ductless';
 
 /**
  * HomebridgePlatform
@@ -95,7 +96,14 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        new KumoPlatformAccessory(this, existingAccessory);
+        if(existingAccessory.context.zoneTable.unitType === 'ductless') {
+          this.log.info('Initializing "%s" as ductless unit.', existingAccessory.displayName);
+          new KumoPlatformAccessory_ductless(this, existingAccessory);
+        } else {
+          this.log.info('Initializing "%s" as generic (unspecified) unit.', existingAccessory.displayName);
+          new KumoPlatformAccessory(this, existingAccessory);
+        }
+        
 
       } else {
         // the accessory does not yet exist, so we need to create it
@@ -118,7 +126,13 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        new KumoPlatformAccessory(this, accessory);
+        if(accessory.context.zoneTable.unitType === 'ductless') {
+          this.log.info('Initializing "%s" as ductless unit.', device.label);
+          new KumoPlatformAccessory_ductless(this, accessory);
+        } else {
+          this.log.info('Initializing "%s" as generic (unspecified) unit.', device.label);
+          new KumoPlatformAccessory(this, accessory);
+        }
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
