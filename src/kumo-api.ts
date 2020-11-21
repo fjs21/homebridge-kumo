@@ -119,7 +119,7 @@ export class KumoApi {
         body: JSON.stringify({'username':this.username, 'password':this.password, 'appVersion':'2.2.0'}),
       }, 5000, 'Time out on Kumo cloud connection.');
     } catch(error) {
-      this.log.error('Kumo API error: %s', error);
+      this.log.error('Kumo API: error - %s', error);
       return false;
     }
 

@@ -40,11 +40,8 @@ export class KumoPlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.zoneTable.unitType)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.serial);
 
-    //this.Thermostat = this.accessory.getService(
-    //  this.platform.Service.HeaterCooler) || this.accessory.addService(this.platform.Service.HeaterCooler);
     this.Thermostat = this.accessory.getService(
       this.platform.Service.Thermostat) || this.accessory.addService(this.platform.Service.Thermostat);
-
     this.Fan = this.accessory.getService(this.platform.Service.Fanv2) || this.accessory.addService(this.platform.Service.Fanv2);
     this.PowerSwitch = this.accessory.getService(
       this.platform.Service.Switch) || this.accessory.addService(this.platform.Service.Switch);
