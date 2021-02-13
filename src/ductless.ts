@@ -506,7 +506,7 @@ export class KumoPlatformAccessory_ductless {
       this.lastupdate = Date.now();
       this.platform.log.info('Heater/Cooler: set Active from %s to %s', value_old, value);  
       // switch off dehumidifier accessory
-      this.Dehumidifier.updateCharacteristic(this.platform.Characteristic.On,0);
+      this.Dehumidifier.updateCharacteristic(this.platform.Characteristic.On, 0);
     }
     callback(null);
   }
