@@ -92,7 +92,7 @@ export class KumoPlatformAccessory {
       minutes: historyInterval,
     });
     this.historyService.name = this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
-    //this.historyService.log = this.platform.log; // swicthed off to prevent flooding the log
+    //this.historyService.log = this.platform.log; // switched off to prevent flooding the log
 
     setInterval(() => {
       this.platform.log.debug('Running interval');
