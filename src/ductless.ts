@@ -17,8 +17,8 @@ import { KUMO_LAG, KUMO_DEVICE_WAIT } from './settings';
 export class KumoPlatformAccessory_ductless {
   //private service: Service;
   private HeaterCooler: Service;
-  // private Fan: Service;
-  // private PowerSwitch: Service;
+  private Fan: Service;
+  private PowerSwitch: Service;
   private Dehumidifier: Service;
 
   private lastupdate;
@@ -56,19 +56,19 @@ export class KumoPlatformAccessory_ductless {
     this.HeaterCooler = this.accessory.getService(
       this.platform.Service.HeaterCooler) || this.accessory.addService(this.platform.Service.HeaterCooler);
     this.Fan = this.accessory.getService(this.platform.Service.Fanv2) || this.accessory.addService(this.platform.Service.Fanv2);
-    this.PowerSwitch = this.accessory.getService(
-      this.platform.Service.Switch) || this.accessory.addService(this.platform.Service.Switch);
+    this.PowerSwitch = this.accessory.getService('Power') ||
+    	this.accessory.addService(this.platform.Service.Switch, 'Power', 'Power');
 
     /* Implement dehumidifer as seperate switch as minisplit does not have humidity measuerment */
-    this.Dehumidifier = this.accessory.getService(
-      this.platform.Service.Switch) || this.accessory.addService(this.platform.Service.Switch);     
+    this.Dehumidifier = this.accessory.getService('Dehumidifier') || 
+    	this.accessory.addService(this.platform.Service.Switch, 'Dehumidifier', 'Dehumidifier');
+
     //  this.platform.Service.HumidifierDehumidifier) || this.accessory.addService(this.platform.Service.HumidifierDehumidifier);
 
     // set sevice names.
     this.HeaterCooler.setCharacteristic(this.platform.Characteristic.Name, 'Heater/Cooler');
     this.Fan.setCharacteristic(this.platform.Characteristic.Name, 'Fan');
     this.PowerSwitch.setCharacteristic(this.platform.Characteristic.Name, 'Power');
-    this.Dehumidifier.setCharacteristic(this.platform.Characteristic.Name, 'Dehumidifier');
 
     // create handlers for characteristics
     this.HeaterCooler.getCharacteristic(this.platform.Characteristic.Active)
@@ -121,8 +121,8 @@ export class KumoPlatformAccessory_ductless {
   
     /* Device - Dehumidifer */
     this.Dehumidifier.getCharacteristic(this.platform.Characteristic.On)
-      .on('get', this.handleDehumidifierSwitchGet.bind(this))
-      .on('set', this.handleDehumidifierSwitchSet.bind(this));
+       .on('get', this.handleDehumidifierSwitchGet.bind(this))
+       .on('set', this.handleDehumidifierSwitchSet.bind(this));
 
     // this.Dehumidifier.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
     //   .on('get', this.handleDehumidiferCurrentRelativeHumidityGet.bind(this));
@@ -195,16 +195,34 @@ export class KumoPlatformAccessory_ductless {
     callback(null, this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value);
   }
 
-  async handleFanRotationSpeedGet(callback) {
+  async handleRotationSpeedGet(callback) {
     await this.updateAccessoryCharacteristics();
     callback(null, this.HeaterCooler.getCharacteristic(this.platform.Characteristic.RotationSpeed).value);
+  }
+
+  async handleSwingModeGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.HeaterCooler.getCharacteristic(this.platform.Characteristic.SwingMode).value);
+  }
+
+  async handleFanActiveGet(callback) {
+		await this.updateAccessoryCharacteristics();
+    callback(null, this.Fan.getCharacteristic(this.platform.Characteristic.Active).value);
+  }
+
+  async handleFanRotationSpeedGet(callback) {
+    await this.updateAccessoryCharacteristics();
     callback(null, this.Fan.getCharacteristic(this.platform.Characteristic.RotationSpeed).value);
   }
 
   async handleFanSwingModeGet(callback) {
     await this.updateAccessoryCharacteristics();
-    callback(null, this.HeaterCooler.getCharacteristic(this.platform.Characteristic.SwingMode).value);
     callback(null, this.Fan.getCharacteristic(this.platform.Characteristic.SwingMode).value);
+  }
+
+  async handlePowerSwitchOnGet(callback) {
+		await this.updateAccessoryCharacteristics();
+    callback(null, this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On).value);
   }
 
   async handleDehumidifierSwitchGet(callback) {
@@ -678,6 +696,8 @@ export class KumoPlatformAccessory_ductless {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.platform.log.info('Fan: set RotationSpeed from %s to %s.', speed_old, speed);
+      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, Math.floor(speed * 100/6));
+    	this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, Math.floor(speed * 100/6));
     }
     this.lastupdate = Date.now();
     callback(null);
