@@ -5,6 +5,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
 import { KumoPlatformAccessory } from './platformAccessory';
 import { KumoPlatformAccessory_ductless } from './ductless';
+import { KumoPlatformAccessory_ductless_simple } from './ductless_simple';
 
 /**
  * HomebridgePlatform
@@ -99,7 +100,11 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         // this is imported from `platformAccessory.ts`
         if(existingAccessory.context.zoneTable.unitType === 'ductless') {
           this.log.info('Initializing "%s" as ductless unit.', existingAccessory.displayName);
-          new KumoPlatformAccessory_ductless(this, existingAccessory);
+          if(this.config.simpleDuctless) {
+            new KumoPlatformAccessory_ductless_simple(this, existingAccessory);
+          } else {
+            new KumoPlatformAccessory_ductless(this, existingAccessory);
+          }
         } else {
           this.log.info('Initializing "%s" as generic (unspecified) unit.', existingAccessory.displayName);
           new KumoPlatformAccessory(this, existingAccessory);
@@ -129,7 +134,11 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         // this is imported from `platformAccessory.ts`
         if(accessory.context.zoneTable.unitType === 'ductless') {
           this.log.info('Initializing "%s" as ductless unit.', device.label);
-          new KumoPlatformAccessory_ductless(this, accessory);
+          if(this.config.simpleDuctless) {
+            new KumoPlatformAccessory_ductless_simple(this, accessory);
+          } else {
+            new KumoPlatformAccessory_ductless(this, accessory);  
+          }
         } else {
           this.log.info('Initializing "%s" as generic (unspecified) unit.', device.label);
           new KumoPlatformAccessory(this, accessory);

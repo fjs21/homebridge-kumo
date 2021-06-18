@@ -14,7 +14,7 @@ import { KUMO_LAG, KUMO_DEVICE_WAIT } from './settings';
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class KumoPlatformAccessory_ductless {
+export class KumoPlatformAccessory_ductless_simple {
   private HeaterCooler: Service;
 
   private lastupdate;
