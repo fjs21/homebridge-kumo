@@ -21,6 +21,11 @@
             "title": "Connect directly to devices?",
             "type": "boolean",
             "required": false
+        },
+        "simpleDuctless": {
+            "title": "Show simple HeaterCooler accessory only?",
+            "type": "boolean",
+            "required": false
         }
     }
   }
