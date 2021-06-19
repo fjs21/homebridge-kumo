@@ -325,7 +325,6 @@ export class KumoPlatformAccessory_ductless_simple {
       currentValue = (fanStateMap[fanSpeed]) * 100/6;  
     }
     this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
-    //this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
   }
   
   private updateFanSwingMode() {  
@@ -341,7 +340,6 @@ export class KumoPlatformAccessory_ductless_simple {
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     }
     this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
-    //this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
   }
 
   // handlers SET
@@ -499,10 +497,10 @@ export class KumoPlatformAccessory_ductless_simple {
       } else {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
+      this.lastupdate = Date.now();
       this.platform.log.info('Fan: set RotationSpeed from %s to %s.', speed_old, speed);
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, Math.floor(speed * 100/6));
-    }
-    this.lastupdate = Date.now();
+    }    
     callback(null);
   }
 
@@ -524,31 +522,6 @@ export class KumoPlatformAccessory_ductless_simple {
     }
     this.lastupdate = Date.now();
     this.platform.log.info('Fan: set Swing to %s.', value);  
-    callback(null);
-  }
-
-  handlePowerSwitchOnSet(value, callback) {
-    let command: Record<string, unknown> | undefined;
-    let commandDirect: Record<string, unknown> | undefined;
-    if(!value) {
-      command = {'power':0, 'operationMode':16};
-      commandDirect = {'mode':'off'};
-      // turn off other services to refect power off
-      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
-    } else {
-      // turn on Fan with auto fanSpeed and airDirection
-      command = {'power':1, 'operationMode':7, 'fanSpeed':0, 'airDirection':0};
-      commandDirect = {'mode':'vent', 'fanSpeed':'superQuiet', 'vaneDir':'auto'}; 
-      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
-    }
-  
-    if(!this.directAccess) {
-      this.platform.kumo.execute(this.accessory.context.serial, command);
-    } else {
-      this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
-    }
-    this.lastupdate = Date.now();
-    this.platform.log.info('PowerSwitch: set Active to %s.', value);  
     callback(null);
   }
 
