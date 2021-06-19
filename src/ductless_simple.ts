@@ -353,9 +353,9 @@ export class KumoPlatformAccessory_ductless_simple {
     let command: Record<string, unknown> | undefined;
     let commandDirect: Record<string, unknown> | undefined;
     if(value === 0 && value_old === 1) {
-      // turn ON fan mode
-      command = {'operationMode':7};
-      commandDirect = {'mode':'vent'};
+      // turn OFF
+      command = {'power':0, 'operationMode': 16};
+      commandDirect = {'mode':'off'};
     } else if(value === 1 && value_old === 0) {
       // use existing TargetHeaterCoolerState
       const value: number = <number>this.HeaterCooler.getCharacteristic(
