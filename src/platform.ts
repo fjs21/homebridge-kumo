@@ -72,6 +72,10 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of this.kumo.devices) {
+
+      
+
+
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
       // number or MAC address
@@ -83,6 +87,14 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
       if (existingAccessory) {
         // the accessory already exists
+        
+        // Exclude or include certain openers based on configuration parameters.
+        if(!this.optionEnabled(device)) {
+          this.log.info('Remmoving accessory:', device.serial);
+          this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
+          continue;
+        }
+
         this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
@@ -113,6 +125,13 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
       } else {
         // the accessory does not yet exist, so we need to create it
+
+        // Exclude or include certain openers based on configuration parameters.
+        if(!this.optionEnabled(device)) {
+          this.log.info('Skipping accessory:', device.serial);
+          continue;
+        }
+
         this.log.info('Adding new accessory:', device.label);
 
         // create a new accessory
@@ -152,5 +171,54 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
       // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
 
+  }
+
+  // Modified from homebridge-myq
+  // Utility function to let us know if a Kumo device should be visible in HomeKit or not.
+  private optionEnabled(device, defaultReturnValue = true): boolean {
+
+    // There are a couple of ways to hide and show devices that we support. The rules of the road are:
+    //
+    // 1. Explicitly hiding, or showing a gateway device propogates to all the devices that are plugged
+    //    into that gateway. So if you have multiple gateways but only want one exposed in this plugin,
+    //    you may do so by hiding it.
+    //
+    // 2. Explicitly hiding, or showing an opener device by its serial number will always override the above.
+    //    This means that it's possible to hide a gateway, and all the openers that are attached to it, and then
+    //    override that behavior on a single opener device that it's connected to.
+    //
+
+    // Nothing configured - we show all Kumo devices to HomeKit.
+    if(!this.config.options) {
+      return defaultReturnValue;
+    }
+
+    // We've explicitly enabled this device.
+    if(this.config.options.indexOf('Enable.' + (device.serial)) !== -1) {
+      return true;
+    }
+
+    // We've explicitly hidden this opener.
+    if(this.config.options.indexOf('Disable.' + device.serial) !== -1) {
+      return false;
+    }
+
+    // If we don't have a zoneTable label, we're done here.
+    if(!device.label) {
+      return true;
+    }
+
+    // We've explicitly shown the zoneTabel label this device is attached to.
+    if(this.config.options.indexOf('Enable.' + device.label) !== -1) {
+      return true;
+    }
+
+    // We've explicitly hidden the zoneTable label this device is attached to.
+    if(this.config.options.indexOf('Disable.' + device.label) !== -1) {
+      return false;
+    }
+
+    // Nothing special to do - make this opener visible.
+    return defaultReturnValue;
   }
 }

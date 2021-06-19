@@ -178,6 +178,7 @@ export class KumoApi {
           label: zoneTable[serial].label,
           zoneTable: zoneTable[serial],
         };
+        this.log.info('Found device. Serial: %s. Label: %s', device.serial, device.label);
         this.devices.push(device);
       }
 
