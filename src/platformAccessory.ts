@@ -217,14 +217,14 @@ export class KumoPlatformAccessory {
   }
 
   private updateTargetTemperature() {
-    // TargetHeaterCoolingThresholdTemperature
+    // TargetTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature).value;
     if(this.accessory.context.device.setTemp === undefined) {
       currentValue = this.accessory.context.device.setTemp;
     } else {
       currentValue = this.accessory.context.device.set_temp_a;
     }
-    this.Thermostat.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, currentValue);
+    this.Thermostat.updateCharacteristic(this.platform.Characteristic.TargetTemperature, currentValue);
   }
   
   private updateCurrentTemperature() {
