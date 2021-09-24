@@ -244,10 +244,13 @@ export class KumoPlatformAccessory {
   private updateCurrentTemperature() {
     // CurrentTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value;
-    if(this.accessory.context.device.room_temp === undefined) {
+    if(this.accessory.context.device.roomTemp !== undefined) {
       currentValue = this.accessory.context.device.roomTemp;
-    } else {
+    } else if(this.accessory.context.device.room_temp_a !== undefined) {
       currentValue = this.accessory.context.device.room_temp_a;
+    } else {
+      // temperature not reported from device
+      return;
     }
     this.Thermostat.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, currentValue);
 
