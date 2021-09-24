@@ -232,12 +232,12 @@ export class KumoPlatformAccessory {
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature).value;
     if(this.accessory.context.device.set_temp_a !== undefined) {
       currentValue = this.accessory.context.device.set_temp_a;
-    } elseif(this.accessory.context.device.setTemp !== undefined) {
+    } else if(this.accessory.context.device.setTemp !== undefined) {
       currentValue = this.accessory.context.device.setTemp;
     } else {
       // no valid target temperature reported from device
-      return
-    }
+      return;
+    };
     this.Thermostat.updateCharacteristic(this.platform.Characteristic.TargetTemperature, currentValue);
   }
   
@@ -294,12 +294,12 @@ export class KumoPlatformAccessory {
     };
     if (fan_speed !== undefined) {
       currentValue = (fan_speed) * 100/6;
-    } elseif(fanSpeed !== undefined) {
+    } else if(fanSpeed !== undefined) {
       currentValue = (fanStateMap[fanSpeed]) * 100/6;  
     } else {
       // fan rotation speed not reported from device
-      return
-    }
+      return;
+    };
     this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
   }
   
@@ -312,12 +312,12 @@ export class KumoPlatformAccessory {
     // retrieve air_direction
     if(air_direction === 7 || vaneDir === 'swing') {
       currentValue = this.platform.Characteristic.SwingMode.SWING_ENABLED;
-    } elseif(air_direction !== undefined || vaneDir !== undefined) {
+    } else if(air_direction !== undefined || vaneDir !== undefined) {
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     } else {
       // air direction not reported from device
-      return
-    }
+      return;
+    };
     this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
   }
   
