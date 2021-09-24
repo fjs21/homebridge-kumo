@@ -190,12 +190,13 @@ export class KumoPlatformAccessory {
     } else if (operation_mode === 9 
         || mode === 'heat' || mode === 'autoHeat') {
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
-    } else if (operation_mode === 11 
+    } else if (operation_mode === 11 || operation_mode === 3 
         || mode === 'cool' || mode === 'autoCool') {
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
     } else if (operation_mode === 2) {
       // set to dehumidfy
-      currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
+      this.platform.log.info('Heater/Cooler: CurrentState: Dehumidify ON');
+      currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.OFF; 
     } else {
       this.platform.log.warn('Heater/Cooler: did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
       // could be bad idea to capture OFF target with else
@@ -214,10 +215,11 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
     } else if (operation_mode === 9 || mode === 'heat') {
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.HEAT;
-    } else if (operation_mode === 11 || mode === 'cool') {
+    } else if (operation_mode === 11 || operation_mode === 3 || mode === 'cool') {
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
     } else if (operation_mode === 2) {
       // set to dehumidfy
+      this.platform.log.info('Heater/Cooler: TargetState: Dehumidify ON');
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     } else {
       this.platform.log.warn('Heater/Cooler: did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
@@ -231,11 +233,15 @@ export class KumoPlatformAccessory {
     // TargetTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature).value;
     if(this.accessory.context.device.set_temp_a !== undefined) {
+      this.platform.log.debug('Heater/Cooler: TargetTemperature=%s', this.accessory.context.device.set_temp_a);
       currentValue = this.accessory.context.device.set_temp_a;
     } else if(this.accessory.context.device.setTemp !== undefined) {
+      this.platform.log.debug('Heater/Cooler: TargetTemperature=%s', this.accessory.context.device.setTemp);
       currentValue = this.accessory.context.device.setTemp;
     } else {
       // no valid target temperature reported from device
+      this.platform.log.warn('Heater/Cooler: Unable to find target temp');
+      this.platform.log.warn(this.accessory.context.device);
       return;
     }
     this.Thermostat.updateCharacteristic(this.platform.Characteristic.TargetTemperature, currentValue);
@@ -245,11 +251,14 @@ export class KumoPlatformAccessory {
     // CurrentTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value;
     if(this.accessory.context.device.roomTemp !== undefined) {
+      this.platform.log.debug('Heater/Cooler: CurrentTemperature=%s', this.accessory.context.device.roomTemp);
       currentValue = this.accessory.context.device.roomTemp;
     } else if(this.accessory.context.device.room_temp_a !== undefined) {
+      this.platform.log.debug('Heater/Cooler: CurrentTemperature=%s', this.accessory.context.device.room_temp_a);
       currentValue = this.accessory.context.device.room_temp_a;
     } else {
       // temperature not reported from device
+      this.platform.log.warn('Heater/Cooler: Unable to find current temp');
       return;
     }
     this.Thermostat.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, currentValue);
@@ -319,7 +328,8 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     } else {
       // air direction not reported from device
-      return;
+      this.platform.log.warn('Heater/Cooler: Unable to get Swing Mode state: %s, %s', air_direction, vaneDir);
+      currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     }
     this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
   }
