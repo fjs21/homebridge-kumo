@@ -193,6 +193,9 @@ export class KumoPlatformAccessory {
     } else if (operation_mode === 11 
         || mode === 'cool' || mode === 'autoCool') {
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
+    } else if (operation_mode === 2) {
+      // set to dehumidfy
+      currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     } else {
       this.platform.log.warn('Heater/Cooler: did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
       // could be bad idea to capture OFF target with else
@@ -213,6 +216,9 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.HEAT;
     } else if (operation_mode === 11 || mode === 'cool') {
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
+    } else if (operation_mode === 2) {
+      // set to dehumidfy
+      currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     } else {
       this.platform.log.warn('Heater/Cooler: did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
       // could be bad idea to capture OFF target with else
@@ -224,10 +230,13 @@ export class KumoPlatformAccessory {
   private updateTargetTemperature() {
     // TargetTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature).value;
-    if(this.accessory.context.device.set_temp_a === undefined) {
+    if(this.accessory.context.device.set_temp_a !== undefined) {
+      currentValue = this.accessory.context.device.set_temp_a;
+    } elseif(this.accessory.context.device.setTemp !== undefined) {
       currentValue = this.accessory.context.device.setTemp;
     } else {
-      currentValue = this.accessory.context.device.set_temp_a;
+      // no valid target temperature reported from device
+      return
     }
     this.Thermostat.updateCharacteristic(this.platform.Characteristic.TargetTemperature, currentValue);
   }
@@ -283,10 +292,13 @@ export class KumoPlatformAccessory {
       powerful: 5,
       superPowerful: 6,
     };
-    if (!this.directAccess) {
+    if (fan_speed !== undefined) {
       currentValue = (fan_speed) * 100/6;
-    } else {
+    } elseif(fanSpeed !== undefined) {
       currentValue = (fanStateMap[fanSpeed]) * 100/6;  
+    } else {
+      // fan rotation speed not reported from device
+      return
     }
     this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
   }
@@ -300,8 +312,11 @@ export class KumoPlatformAccessory {
     // retrieve air_direction
     if(air_direction === 7 || vaneDir === 'swing') {
       currentValue = this.platform.Characteristic.SwingMode.SWING_ENABLED;
-    } else {
+    } elseif(air_direction !== undefined || vaneDir !== undefined) {
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
+    } else {
+      // air direction not reported from device
+      return
     }
     this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
   }
