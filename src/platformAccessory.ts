@@ -53,34 +53,42 @@ export class KumoPlatformAccessory {
 
     // create handlers for characteristics
     this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState)
-      .on('get', this.handleGet.bind(this));
+      .on('get', this.handleCurrentHeatingCoolingStateGet.bind(this));
 
     this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
-      .on('get', this.handleGet.bind(this))
+      .on('get', this.handleTargetHeatingCoolingStateGet.bind(this))
       .on('set', this.handleTargetHeatingCoolingStateSet.bind(this));
     
     this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature)
-      .on('get', this.handleGet.bind(this))
+      .on('get', this.handleTargetTemperatureGet.bind(this))
       .on('set', this.handleTargetTemperatureSet.bind(this));
 
     this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
-      .on('get', this.handleGet.bind(this));   
+      .on('get', this.handleCurrentTemperatureGet.bind(this));   
   
+    /* Device - Fan */
     this.Fan.getCharacteristic(this.platform.Characteristic.Active)
-      .on('get', this.handleGet.bind(this))
+      .on('get', this.handleFanActiveGet.bind(this))
       .on('set', this.handleFanActiveSet.bind(this));
 
     this.Fan.getCharacteristic(this.platform.Characteristic.RotationSpeed)
-      .on('get', this.handleGet.bind(this))
+      .on('get', this.handleFanRotationSpeesGet.bind(this))
       .on('set', this.handleFanRotationSpeedSet.bind(this));
 
     this.Fan.getCharacteristic(this.platform.Characteristic.SwingMode)
-      .on('get', this.handleGet.bind(this))
+      .on('get', this.handleFanSwingModeGet.bind(this))
       .on('set', this.handleFanSwingModeSet.bind(this));
 
+    /* Device - Power */
     this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On)
+      .on('get', this.handlePowerSwitchOnGet.bind(this));
       .on('set', this.handlePowerSwitchOnSet.bind(this));
-  
+
+    /* Device - Dehumidifer */
+    this.Dehumidifier.getCharacteristic(this.platform.Characteristic.On)
+      .on('get', this.handleDehumidifierSwitchGet.bind(this))
+      .on('set', this.handleDehumidifierSwitchSet.bind(this));
+
     this.updateDevice();
 
     // setup interval for updating device for historyService
@@ -101,9 +109,69 @@ export class KumoPlatformAccessory {
   }
 
   // handlers GET
-  async handleGet(callback) {
+  //async handleActiveGet(callback) {
+  //  await this.updateAccessoryCharacteristics();
+  //  callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.Active).value);
+  //}
+
+  async handleCurrentHeaterCoolerStateGet(callback) {
     await this.updateAccessoryCharacteristics();
-    callback(null);
+    callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState).value);
+  }
+
+  async handleTargetHeaterCoolerStateGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState).value);
+  }
+
+  async handleTargetHeaterCoolingThresholdTemperatureGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature).value);
+  }
+
+  async handleTargetHeaterHeatingThresholdTemperatureGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Thermostatr.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature).value);
+  }
+
+  async handleCurrentTemperatureGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value);
+  }
+
+  async handleRotationSpeedGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.RotationSpeed).value);
+  }
+
+  async handleSwingModeGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.SwingMode).value);
+  }
+
+  async handleFanActiveGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Fan.getCharacteristic(this.platform.Characteristic.Active).value);
+  }
+
+  async handleFanRotationSpeedGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Fan.getCharacteristic(this.platform.Characteristic.RotationSpeed).value);
+  }
+
+  async handleFanSwingModeGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Fan.getCharacteristic(this.platform.Characteristic.SwingMode).value);
+  }
+
+  async handlePowerSwitchOnGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On).value);
+  }
+
+  async handleDehumidifierSwitchGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Dehumidifier.getCharacteristic(this.platform.Characteristic.On).value);
   }
 
   async updateAccessoryCharacteristics() {
