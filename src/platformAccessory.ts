@@ -219,7 +219,7 @@ export class KumoPlatformAccessory {
   private updateTargetTemperature() {
     // TargetTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature).value;
-    if(this.accessory.context.device.setTemp === undefined) {
+    if(this.accessory.context.device.set_temp_a === undefined) {
       currentValue = this.accessory.context.device.setTemp;
     } else {
       currentValue = this.accessory.context.device.set_temp_a;
@@ -279,9 +279,9 @@ export class KumoPlatformAccessory {
       superPowerful: 6,
     };
     if (!this.directAccess) {
-      currentValue = (fan_speed - 1) * 20;
+      currentValue = (fan_speed) * 100/6;
     } else {
-      currentValue = (fanStateMap[fanSpeed] - 1) * 20;  
+      currentValue = (fanStateMap[fanSpeed]) * 100/6;  
     }
     this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
   }
