@@ -237,7 +237,7 @@ export class KumoPlatformAccessory {
     } else {
       // no valid target temperature reported from device
       return;
-    };
+    }
     this.Thermostat.updateCharacteristic(this.platform.Characteristic.TargetTemperature, currentValue);
   }
   
@@ -299,7 +299,7 @@ export class KumoPlatformAccessory {
     } else {
       // fan rotation speed not reported from device
       return;
-    };
+    }
     this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
   }
   
@@ -317,7 +317,7 @@ export class KumoPlatformAccessory {
     } else {
       // air direction not reported from device
       return;
-    };
+    }
     this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
   }
   
