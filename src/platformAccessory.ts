@@ -193,6 +193,10 @@ export class KumoPlatformAccessory {
     } else if (operation_mode === 11 
         || mode === 'cool' || mode === 'autoCool') {
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
+    } else {
+      this.platform.log.warn('Heater/Cooler: did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
+      // could be bad idea to capture OFF target with else
+      currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     }
     this.Thermostat.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState, currentValue);  
   }
@@ -210,6 +214,7 @@ export class KumoPlatformAccessory {
     } else if (operation_mode === 11 || mode === 'cool') {
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
     } else {
+      this.platform.log.warn('Heater/Cooler: did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
       // could be bad idea to capture OFF target with else
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     }
