@@ -273,10 +273,10 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
     } else if (operation_mode === 2) {
       // set to dehumidfy
-      this.platform.log.info('Heater/Cooler: CurrentState: Dehumidify ON');
+      this.platform.log.info('Thermostat: CurrentState: Dehumidify ON');
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.OFF; 
     } else {
-      this.platform.log.warn('Heater/Cooler: did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
+      this.platform.log.warn('Thermostat: CurrentState did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
       // could be bad idea to capture OFF target with else
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     }
@@ -297,10 +297,13 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
     } else if (operation_mode === 2) {
       // set to dehumidfy
-      this.platform.log.info('Heater/Cooler: TargetState: Dehumidify ON');
+      this.platform.log.info('Thermostat: TargetState: Dehumidify');
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
+    } else if (operation_mode === 7) {
+      this.platofrm.log.info('Thermostat: TargetState: Fan');    
+      currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF;
     } else {
-      this.platform.log.warn('Heater/Cooler: did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
+      this.platform.log.warn('Thermostat: TargetState not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
       // could be bad idea to capture OFF target with else
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     }
