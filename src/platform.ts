@@ -110,7 +110,8 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        if(existingAccessory.context.zoneTable.unitType === 'ductless') {
+        if(existingAccessory.context.zoneTable.unitType === 'ductless' 
+          || existingAccessory.context.zoneTable.unitType === 'mvz') {
           this.log.info('Initializing "%s" as ductless unit.', existingAccessory.displayName);
           if(this.config.simpleDuctless) {
             new KumoPlatformAccessory_ductless_simple(this, existingAccessory);
@@ -151,7 +152,8 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        if(accessory.context.zoneTable.unitType === 'ductless') {
+        if(accessory.context.zoneTable.unitType === 'ductless' 
+          || accessory.context.zoneTable.unitType === 'mvz') {
           this.log.info('Initializing "%s" as ductless unit.', device.label);
           if(this.config.simpleDuctless) {
             new KumoPlatformAccessory_ductless_simple(this, accessory);
