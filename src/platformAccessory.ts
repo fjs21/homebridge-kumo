@@ -18,6 +18,7 @@ export class KumoPlatformAccessory {
   private Thermostat: Service;
   private Fan: Service;
   private PowerSwitch: Service;
+  private Dehumidifier: Service;
 
   private lastupdate;
   private lastquery;
@@ -46,18 +47,22 @@ export class KumoPlatformAccessory {
     this.PowerSwitch = this.accessory.getService(
       this.platform.Service.Switch) || this.accessory.addService(this.platform.Service.Switch);
 
+    /* Implement dehumidifer as seperate switch as minisplit does not have humidity measuerment */
+    this.Dehumidifier = this.accessory.getService('Dehumidifier') || 
+      this.accessory.addService(this.platform.Service.Switch, 'Dehumidifier', 'Dehumidifier');
+
     // set sevice names.
     this.Thermostat.setCharacteristic(this.platform.Characteristic.Name, 'Thermostat');
     this.Fan.setCharacteristic(this.platform.Characteristic.Name, 'Fan');
     this.PowerSwitch.setCharacteristic(this.platform.Characteristic.Name, 'Power');
 
     // create handlers for characteristics
-    this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState)
-      .on('get', this.handleCurrentHeatingCoolingStateGet.bind(this));
+    this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState)
+      .on('get', this.handleCurrentHeaterCoolerStateGet.bind(this));
 
-    this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
-      .on('get', this.handleTargetHeatingCoolingStateGet.bind(this))
-      .on('set', this.handleTargetHeatingCoolingStateSet.bind(this));
+    this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState)
+      .on('get', this.handleTargetHeaterCoolerStateGet.bind(this))
+      .on('set', this.handleTargetHeaterCoolerStateSet.bind(this));
     
     this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature)
       .on('get', this.handleTargetTemperatureGet.bind(this))
@@ -72,7 +77,7 @@ export class KumoPlatformAccessory {
       .on('set', this.handleFanActiveSet.bind(this));
 
     this.Fan.getCharacteristic(this.platform.Characteristic.RotationSpeed)
-      .on('get', this.handleFanRotationSpeesGet.bind(this))
+      .on('get', this.handleFanRotationSpeedGet.bind(this))
       .on('set', this.handleFanRotationSpeedSet.bind(this));
 
     this.Fan.getCharacteristic(this.platform.Characteristic.SwingMode)
@@ -131,12 +136,17 @@ export class KumoPlatformAccessory {
 
   async handleTargetHeaterHeatingThresholdTemperatureGet(callback) {
     await this.updateAccessoryCharacteristics();
-    callback(null, this.Thermostatr.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature).value);
+    callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature).value);
   }
 
   async handleCurrentTemperatureGet(callback) {
     await this.updateAccessoryCharacteristics();
     callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value);
+  }
+
+  async handleTargetTemperatureGet(callback) {
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature).value);
   }
 
   async handleRotationSpeedGet(callback) {
@@ -461,7 +471,7 @@ export class KumoPlatformAccessory {
   }
 
   // Handle requests to set the "Target Heater Cooler State" characteristic
-  handleTargetHeatingCoolingStateSet(value, callback) {
+  handleTargetHeaterCoolerStateSet(value, callback) {
     const value_old: number = <number>this.Thermostat.getCharacteristic(
       this.platform.Characteristic.TargetHeatingCoolingState).value;
 
@@ -639,6 +649,40 @@ export class KumoPlatformAccessory {
     }
     this.lastupdate = Date.now();
     this.platform.log.info('PowerSwitch: set Active to %s.', value);  
+    callback(null);
+  }
+
+  handleDehumidifierSwitchSet(value, callback) {
+    let command: Record<string, unknown> | undefined;
+    let commandDirect: Record<string, unknown> | undefined;
+
+    if(!value) {
+      command = {'power':0, 'operationMode':16};
+      commandDirect = {'mode':'off'};
+      // turn off Dehumidifier - set HeaterCooler to OFF, fan to OFF, PowerSwitch to OFF
+      this.Thermostat.updateCharacteristic(this.platform.Characteristic.Active, 0);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.Active, 0);
+      this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.On, 0);
+      
+    } else {
+      // turn on Dehumidifer - set HeaterCooler to OFF, fan to AUTO, vane to SWING_DISABLED
+      command = {'power':1, 'operationMode':2, 'fanSpeed':0, 'airDirection':0};
+      commandDirect = {'mode':'dry', 'fanSpeed':'auto', 'vaneDir':'auto'}; 
+      this.Thermostat.updateCharacteristic(this.platform.Characteristic.Active, 0);
+      this.Thermostat.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
+      this.Thermostat.updateCharacteristic(this.platform.Characteristic.SwingMode, this.platform.Characteristic.SwingMode.SWING_DISABLED);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, this.platform.Characteristic.SwingMode.SWING_DISABLED);
+      this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.On, 1);
+    }
+  
+    if(!this.directAccess) {
+      this.platform.kumo.execute(this.accessory.context.serial, command);
+    } else {
+      this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+    }
+    this.lastupdate = Date.now();
+    this.platform.log.info('DehumidiferSwitch: set Active to %s.', value);  
     callback(null);
   }
 
