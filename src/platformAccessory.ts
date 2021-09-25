@@ -81,7 +81,7 @@ export class KumoPlatformAccessory {
 
     /* Device - Power */
     this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On)
-      .on('get', this.handlePowerSwitchOnGet.bind(this));
+      .on('get', this.handlePowerSwitchOnGet.bind(this))
       .on('set', this.handlePowerSwitchOnSet.bind(this));
 
     /* Device - Dehumidifer */
