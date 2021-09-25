@@ -300,7 +300,7 @@ export class KumoPlatformAccessory {
       this.platform.log.info('Thermostat: TargetState: Dehumidify');
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     } else if (operation_mode === 7) {
-      this.platofrm.log.info('Thermostat: TargetState: Fan');    
+      this.platform.log.info('Thermostat: TargetState: Fan');    
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF;
     } else {
       this.platform.log.warn('Thermostat: TargetState not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
