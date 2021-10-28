@@ -393,10 +393,14 @@ export class KumoPlatformAccessory_ductless {
   private updateCurrentTemperature() {
     // CurrentTemperature
     let currentValue: number = <number>this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value;
-    if(this.accessory.context.device.room_temp === undefined) {
+    if(this.accessory.context.device.roomtemp !== undefined) {
       currentValue = this.accessory.context.device.roomTemp;
-    } else {
+    } else if(this.accessory.context.device.room_temp !== undefined) {
       currentValue = this.accessory.context.device.room_temp;
+    } else {
+      // no valid target temperature reported from device
+      this.platform.log.warn('Heater/Cooler: Unable to find target temp');
+      this.platform.log.warn(this.accessory.context.device);
     }
     this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, currentValue);
 

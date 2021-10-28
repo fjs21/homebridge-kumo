@@ -108,7 +108,7 @@ export class KumoPlatformAccessory {
     //this.historyService.log = this.platform.log; // switched off to prevent flooding the log
 
     setInterval(() => {
-      this.platform.log.debug('Running interval');
+      this.platform.log.debug('%s: Running interval', this.accessory.displayName);
       this.updateAccessoryCharacteristics();
     }, 1000 * 60 * historyInterval);
   }
@@ -273,11 +273,11 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
     } else if (operation_mode === 2) {
       // set to dehumidfy
-      this.platform.log.info('Thermostat: CurrentState: Dehumidify ON');
+      this.platform.log.info('%s: CurrentState: Dehumidify ON', this.accessory.displayName);
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.OFF; 
     } else {
-      this.platform.log.warn('Thermostat: CurrentState did not find matching mode: %s, %s\nPlease contact the developer', 
-        operation_mode, mode);
+      this.platform.log.warn('%s: CurrentState did not find matching mode: %s, %s\nPlease contact the developer', 
+        this.accessory.displayName, operation_mode, mode);
       // could be bad idea to capture OFF target with else
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     }
@@ -298,13 +298,14 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
     } else if (operation_mode === 2) {
       // set to dehumidfy
-      this.platform.log.info('Thermostat: TargetState: Dehumidify');
+      this.platform.log.info('%s: TargetState: Dehumidify', this.accessory.displayName);
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     } else if (operation_mode === 7) {
-      this.platform.log.info('Thermostat: TargetState: Fan');    
+      this.platform.log.info('%s: TargetState: Fan', this.accessory.displayName);    
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF;
     } else {
-      this.platform.log.warn('Thermostat: TargetState not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
+      this.platform.log.warn('%s: TargetState not find matching mode: %s, %s\nPlease contact the developer', 
+        this.accessory.displayName, operation_mode, mode);
       // could be bad idea to capture OFF target with else
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     }
@@ -314,15 +315,19 @@ export class KumoPlatformAccessory {
   private updateTargetTemperature() {
     // TargetTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature).value;
-    if(this.accessory.context.device.set_temp_a !== undefined) {
-      this.platform.log.debug('Heater/Cooler: TargetTemperature=%s', this.accessory.context.device.set_temp_a);
+    if(this.accessory.context.device.set_temp_a !== undefined && 
+        this.accessory.context.device.set_temp_a !== 'null') {
+      this.platform.log.debug('%s: TargetTemperature=%s', 
+        this.accessory.displayName, this.accessory.context.device.set_temp_a);
       currentValue = this.accessory.context.device.set_temp_a;
-    } else if(this.accessory.context.device.setTemp !== undefined) {
-      this.platform.log.debug('Heater/Cooler: TargetTemperature=%s', this.accessory.context.device.setTemp);
+    } else if(this.accessory.context.device.setTemp !== undefined &&
+        this.accessory.context.device.setTemp !== 'null') {
+      this.platform.log.debug('%s: TargetTemperature=%s', 
+        this.accessory.displayName, this.accessory.context.device.setTemp);
       currentValue = this.accessory.context.device.setTemp;
     } else {
       // no valid target temperature reported from device
-      this.platform.log.warn('Heater/Cooler: Unable to find target temp');
+      this.platform.log.warn('%s: Unable to find target temp', this.accessory.displayName);
       this.platform.log.warn(this.accessory.context.device);
       return;
     }
@@ -332,15 +337,19 @@ export class KumoPlatformAccessory {
   private updateCurrentTemperature() {
     // CurrentTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value;
-    if(this.accessory.context.device.roomTemp !== undefined) {
-      this.platform.log.debug('Heater/Cooler: CurrentTemperature=%s', this.accessory.context.device.roomTemp);
+    if(this.accessory.context.device.roomTemp !== undefined &&
+        this.accessory.context.device.roomTemp !== 'null') {
+      this.platform.log.debug('%s: CurrentTemperature=%s', 
+        this.accessory.displayName, this.accessory.context.device.roomTemp);
       currentValue = this.accessory.context.device.roomTemp;
-    } else if(this.accessory.context.device.room_temp_a !== undefined) {
-      this.platform.log.debug('Heater/Cooler: CurrentTemperature=%s', this.accessory.context.device.room_temp_a);
+    } else if(this.accessory.context.device.room_temp_a !== undefined &&
+        this.accessory.context.device.room_temp_a !== 'null') {
+      this.platform.log.debug('%s: CurrentTemperature=%s', 
+        this.accessory.displayName, this.accessory.context.device.room_temp_a);
       currentValue = this.accessory.context.device.room_temp_a;
     } else {
       // temperature not reported from device
-      this.platform.log.warn('Heater/Cooler: Unable to find current temp');
+      this.platform.log.warn('%s: Unable to find current temp', this.accessory.displayName);
       return;
     }
     this.Thermostat.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, currentValue);
@@ -410,7 +419,8 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     } else {
       // air direction not reported from device
-      this.platform.log.warn('Heater/Cooler: Unable to get Swing Mode state: %s, %s', air_direction, vaneDir);
+      this.platform.log.warn('%s Fan: Unable to get Swing Mode state: %s, %s', 
+        this.accessory.displayName, air_direction, vaneDir);
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     }
     this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
@@ -469,7 +479,8 @@ export class KumoPlatformAccessory {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('Heater/Cooler: set Active from %s to %s', value_old, value);  
+      this.platform.log.info('%s Thermostat: set Active from %s to %s',
+        this.accessory.displayName, value_old, value);  
     }
     callback(null);
   }
@@ -502,7 +513,8 @@ export class KumoPlatformAccessory {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('Thermostat: set TargetState from %s to %s.', value_old, value);  
+      this.platform.log.info('%s Thermostat: set TargetState from %s to %s.', 
+        this.accessory.displayName, value_old, value);  
     }
     callback(null);
   }  
@@ -522,7 +534,8 @@ export class KumoPlatformAccessory {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('Thermostat: set TargetTemperature to %s', value);
+    this.platform.log.info('%s Thermostat: set TargetTemperature to %s', 
+      this.accessory.displayName, value);
     callback(null);
   }  
 
@@ -563,7 +576,8 @@ export class KumoPlatformAccessory {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('Fan: set Active to %s.', value);
+      this.platform.log.info('%s Fan: set Active to %s.', 
+        this.accessory.displayName, value);
     }
     callback(null);
   }
@@ -590,14 +604,16 @@ export class KumoPlatformAccessory {
       };
 
       const commandDirect: Record<string, string> = {'fanSpeed':fanStateMap[speed]};
-      this.platform.log.info('commandDirect: %s.', commandDirect);
+      this.platform.log.info('%s commandDirect: %s.', 
+        this.accessory.displayName, commandDirect);
 
       if(!this.directAccess) {
         this.platform.kumo.execute(this.accessory.context.serial, command);
       } else {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
-      this.platform.log.info('Fan: set RotationSpeed from %s to %s.', speed_old, speed);
+      this.platform.log.info('%s Fan: set RotationSpeed from %s to %s.', 
+        this.accessory.displayName, speed_old, speed);
     }
     this.lastupdate = Date.now();
     callback(null);
@@ -621,7 +637,8 @@ export class KumoPlatformAccessory {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('Fan: set Swing to %s.', value);  
+    this.platform.log.info('%s Fan: set Swing to %s.',
+      this.accessory.displayName, value);  
     callback(null);
   }
 
@@ -652,7 +669,8 @@ export class KumoPlatformAccessory {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('PowerSwitch: set Active to %s.', value);  
+    this.platform.log.info('%s PowerSwitch: set Active to %s.', 
+      this.accessory.displayName, value);  
     callback(null);
   }
 
@@ -686,7 +704,8 @@ export class KumoPlatformAccessory {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('DehumidiferSwitch: set Active to %s.', value);  
+    this.platform.log.info('%s DehumidiferSwitch: set Active to %s.', 
+      this.accessory.displayName, value);  
     callback(null);
   }
 
