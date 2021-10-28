@@ -276,7 +276,8 @@ export class KumoPlatformAccessory {
       this.platform.log.info('Thermostat: CurrentState: Dehumidify ON');
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.OFF; 
     } else {
-      this.platform.log.warn('Thermostat: CurrentState did not find matching mode: %s, %s\nPlease contact the developer', operation_mode, mode);
+      this.platform.log.warn('Thermostat: CurrentState did not find matching mode: %s, %s\nPlease contact the developer', 
+        operation_mode, mode);
       // could be bad idea to capture OFF target with else
       currentValue = this.platform.Characteristic.TargetHeatingCoolingState.OFF; 
     }

@@ -99,13 +99,16 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
         existingAccessory.context.zoneTable = device.zoneTable;
-        /*
+        
+        this.log.info(device.zoneTable);
+
         if (this.config.directAccess) {
           existingAccessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
         } else {
           existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
         }
-        */
+        this.log.info(existingAccessory.context.device);
+
         this.api.updatePlatformAccessories([existingAccessory]);
 
         // create the accessory handler for the restored accessory
@@ -119,11 +122,22 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
             new KumoPlatformAccessory_ductless(this, existingAccessory);
           }
         } else {
-          this.log.info('Initializing "%s" as generic (unspecified) unit.', existingAccessory.displayName);
-          new KumoPlatformAccessory(this, existingAccessory);
+          this.log.info('Initializing "%s" of unitType "%s%" as generic (unspecified) unit.', 
+            existingAccessory.displayName, existingAccessory.context.zoneTable.unitType);
+          // if we find cool and heat settings use ductless accessory
+          if(existingAccessory.context.device.sp_heat !== undefined && existingAccessory.context.device.sp_cool !== undefined) {
+            this.log.info('%s: Found heat and cool settings will use ductless accessory', existingAccessory.displayName);
+            if(this.config.simpleDuctless) {
+              new KumoPlatformAccessory_ductless_simple(this, existingAccessory);
+            } else {
+              new KumoPlatformAccessory_ductless(this, existingAccessory);
+            }
+          } else {         
+            this.log.info('%s: Using platformaAccessory.ts accessory.', existingAccessory.displayName);
+            new KumoPlatformAccessory(this, existingAccessory);
+          }
         }
         
-
       } else {
         // the accessory does not yet exist, so we need to create it
 
@@ -142,13 +156,12 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         // the `context` property can be used to store any data about the accessory you may need
         accessory.context.serial = device.serial;
         accessory.context.zoneTable = device.zoneTable;
-        /*
+        
         if (this.config.directAccess) {
           accessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
         } else {
           accessory.context.device = await this.kumo.queryDevice(device.serial);
         }
-        */
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
@@ -161,8 +174,20 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
             new KumoPlatformAccessory_ductless(this, accessory);  
           }
         } else {
-          this.log.info('Initializing "%s" as generic (unspecified) unit.', device.label);
-          new KumoPlatformAccessory(this, accessory);
+          this.log.info('Initializing "%s" of unitType "%s%" as generic (unspecified) unit.', 
+            accessory.displayName, accessory.context.zoneTable.unitType);
+          // if we find cool and heat settings use ductless accessory
+          if(accessory.context.device.sp_heat !== undefined && accessory.context.device.sp_cool !== undefined) {
+            this.log.info('%s: Found heat and cool settings will use ductless accessory', accessory.displayName);
+            if(this.config.simpleDuctless) {
+              new KumoPlatformAccessory_ductless_simple(this, accessory);
+            } else {
+              new KumoPlatformAccessory_ductless(this, accessory);
+            }
+          } else {         
+            this.log.info('%s: Using platformaAccessory.ts accessory.', accessory.displayName);
+            new KumoPlatformAccessory(this, accessory);
+          }
         }
 
         // link the accessory to your platform
