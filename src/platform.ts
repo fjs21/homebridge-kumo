@@ -125,7 +125,8 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
           this.log.info('Initializing "%s" of unitType "%s%" as generic (unspecified) unit.', 
             existingAccessory.displayName, existingAccessory.context.zoneTable.unitType);
           // if we find cool and heat settings use ductless accessory
-          if(existingAccessory.context.device.sp_heat !== undefined && existingAccessory.context.device.sp_cool !== undefined) {
+          if(existingAccessory.context.device.sp_heat !== undefined && (
+            existingAccessory.context.device.sp_cool !== undefined || existingAccessory.context.device.spCool !== undefined)) {
             this.log.info('%s: Found heat and cool settings will use ductless accessory', existingAccessory.displayName);
             if(this.config.simpleDuctless) {
               new KumoPlatformAccessory_ductless_simple(this, existingAccessory);
@@ -177,7 +178,8 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
           this.log.info('Initializing "%s" of unitType "%s%" as generic (unspecified) unit.', 
             accessory.displayName, accessory.context.zoneTable.unitType);
           // if we find cool and heat settings use ductless accessory
-          if(accessory.context.device.sp_heat !== undefined && accessory.context.device.sp_cool !== undefined) {
+          if(accessory.context.device.sp_heat !== undefined && (
+            accessory.context.device.sp_cool !== undefined || accessory.context.device.spCool)) {
             this.log.info('%s: Found heat and cool settings will use ductless accessory', accessory.displayName);
             if(this.config.simpleDuctless) {
               new KumoPlatformAccessory_ductless_simple(this, accessory);
