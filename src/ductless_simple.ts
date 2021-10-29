@@ -31,10 +31,17 @@ export class KumoPlatformAccessory_ductless_simple {
     this.directAccess = this.platform.config.directAccess;
 
     // set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
-      .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.zoneTable.unitType)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.serial);
+    if (accessory.context.zoneTable.unitType !== undefined) {
+      this.accessory.getService(this.platform.Service.AccessoryInformation)!
+        .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
+        .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.serial)
+        .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.zoneTable.unitType);
+    } else {
+      this.accessory.getService(this.platform.Service.AccessoryInformation)!
+        .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
+        .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.serial)
+        .setCharacteristic(this.platform.Characteristic.Model, 'unknown using ductless_simple');
+    }
 
     this.HeaterCooler = this.accessory.getService(
       this.platform.Service.HeaterCooler) || this.accessory.addService(this.platform.Service.HeaterCooler);

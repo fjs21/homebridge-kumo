@@ -38,7 +38,7 @@ export class KumoPlatformAccessory {
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
-    //  .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.zoneTable.unitType)
+      .setCharacteristic(this.platform.Characteristic.Model, 'not reported by device')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.serial);
 
     this.Thermostat = this.accessory.getService(
