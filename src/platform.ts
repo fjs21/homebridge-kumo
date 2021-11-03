@@ -190,7 +190,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
             continue;
           }
           // if we find cool and heat settings use ductless accessory
-          if((accessory.context.device.sp_heat !== undefined || accessory.context.spHeat !== undefined ) && (
+          if((accessory.context.device.sp_heat !== undefined || accessory.context.device.spHeat !== undefined ) && (
             accessory.context.device.sp_cool !== undefined || accessory.context.device.spCool !== undefined )) {
             this.log.info('%s: Found heat and cool settings will use ductless accessory', accessory.displayName);
             if(this.config.simpleDuctless) {
