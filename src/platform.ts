@@ -123,11 +123,11 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
           }
         } else {
           this.log.info('Initializing "%s" of unitType "%s" as generic (unspecified) unit.', 
-		  existingAccessory.displayName, existingAccessory.context.zoneTable.unitType);
-	  if(existingAccessory.context.device === undefined){
+            existingAccessory.displayName, existingAccessory.context.zoneTable.unitType);
+          if(existingAccessory.context.device === undefined){
             this.log.error('%s: No device information returned. Cannot initialize.', existingAccessory.displayName);
-	    continue;
-	  }
+            continue;
+          }
           // if we find cool and heat settings use ductless accessory
           if(existingAccessory.context.device.sp_heat !== undefined && (
             existingAccessory.context.device.sp_cool !== undefined || existingAccessory.context.device.spCool !== undefined)) {
