@@ -90,7 +90,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         
         // Exclude or include certain openers based on configuration parameters.
         if(!this.optionEnabled(device)) {
-          this.log.info('Remmoving accessory:', device.serial);
+          this.log.info('Removing accessory:', device.serial);
           this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
           continue;
         }
@@ -122,8 +122,12 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
             new KumoPlatformAccessory_ductless(this, existingAccessory);
           }
         } else {
-          this.log.info('Initializing "%s" of unitType "%s%" as generic (unspecified) unit.', 
-            existingAccessory.displayName, existingAccessory.context.zoneTable.unitType);
+          this.log.info('Initializing "%s" of unitType "%s" as generic (unspecified) unit.', 
+		  existingAccessory.displayName, existingAccessory.context.zoneTable.unitType);
+	  if(existingAccessory.context.device === undefined){
+            this.log.error('%s: No device information returned. Cannot initialize.', existingAccessory.displayName);
+	    continue;
+	  }
           // if we find cool and heat settings use ductless accessory
           if(existingAccessory.context.device.sp_heat !== undefined && (
             existingAccessory.context.device.sp_cool !== undefined || existingAccessory.context.device.spCool !== undefined)) {
@@ -175,7 +179,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
             new KumoPlatformAccessory_ductless(this, accessory);  
           }
         } else {
-          this.log.info('Initializing "%s" of unitType "%s%" as generic (unspecified) unit.', 
+          this.log.info('Initializing "%s" of unitType "%s" as generic (unspecified) unit.', 
             accessory.displayName, accessory.context.zoneTable.unitType);
           // if we find cool and heat settings use ductless accessory
           if(accessory.context.device.sp_heat !== undefined && (
