@@ -73,9 +73,6 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of this.kumo.devices) {
 
-      
-
-
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
       // number or MAC address
@@ -105,10 +102,10 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         if (this.config.directAccess) {
           existingAccessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
           if(existingAccessory.context.device === null) {
-            this.log.error("Failed to connect to device IP (%s)", device.serial);
+            this.log.error('Failed to connect to device IP (%s)', device.serial);
             existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
-            this.context.directAccess = false;
-            this.log.info("Disabling directAccess to Kumo devices");
+            this.config.directAccess = false;
+            this.log.info('Disabling directAccess to Kumo devices');
           }
         } else {
           existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
@@ -172,11 +169,11 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         if (this.config.directAccess) {
           accessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
-          if(existingAccessory.context.device === null) {
-            this.log.error("Failed to connect to device IP (%s)", device.serial);
-            this.context.directAccess = false;
-            this.log.info("Disabling directAccess to Kumo devices");
-            existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
+          if(accessory.context.device === null) {
+            this.log.error('Failed to connect to device IP (%s)', device.serial);
+            this.config.directAccess = false;
+            this.log.info('Disabling directAccess to Kumo devices');
+            accessory.context.device = await this.kumo.queryDevice(device.serial);
           }
         } else {
           accessory.context.device = await this.kumo.queryDevice(device.serial);
