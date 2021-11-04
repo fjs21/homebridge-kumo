@@ -43,7 +43,7 @@ sudo npm install -g homebridge-kumo
 
 ### Changelog
 v.1.1.1 included support for multiple "sites" on kumo cloud. All devices are currently incorporated into Homebridge. This could be easily customized in the future if multiple homes were controlled by a single kumo account. 
-v.1.1.x includes control via direct IP connection from Homebridge to device. This is much faster than via the kumo cloud API. The kumo cloud is still queried on start up for list of devices and information needed to configure them. 
+v.1.1.x includes control via direct IP connection from Homebridge to device. This is much faster than via the kumo cloud API. The kumo cloud is still queried on start up for list of devices and information needed to configure them.
 
 ## Plugin Configuration
 If you choose to configure this plugin directly instead of using the [Homebridge Configuration web UI](https://github.com/oznu/homebridge-config-ui-x), you'll need to add the platform to your `config.json` in your home directory inside `.homebridge`.
@@ -53,11 +53,19 @@ If you choose to configure this plugin directly instead of using the [Homebridge
     "platform": "Kumo",
     "username": "email@email.com",
     "password": "password",
-    "directAccess": true
+    "directAccess": false
 }]
 ```
 
 For most people, I recommend using [Homebridge Configuration web UI](https://github.com/oznu/homebridge-config-ui-x) to configure this plugin rather than doing so directly. It's easier to use for most users, especially newer users, and less prone to typos, leading to other problems.
+
+### Troubleshooting
+
+1. Issue #45 (and others). If using directAccess, please ensure that the IP address assigned to your Kumo devices is static. The IP address is retrieved from the Kumo cloud at plugin startup and can become out of sync if the Wifi router reboots and assigns a new IP address. Until the Kumo cloud updates (which is unclear when this happens), the plugin will fail to connect.
+
+2. Issue #42. There have been reports of time out errors occuring when using other plugins specifically homebridge-wemo. If you encounter a time out error, please move homebridge-kumo to a seperate bridge.
+
+3. Issue #3. The temperature calculations used by Kumo and Homekit are not identical. As the temperature used on the backend is entirely in celcius both the Kumo app and Home apps convert these values to farenheit. There are some discrpencies in the calculation which will lead to temeperatures being incorrectly reported at certain values. 
 
 ## Credits
 This plugin used many cues from [homebridge-myq2](https://github.com/hjdhjd/homebridge-myq2/) for plugin structure and [homebridge-kumo](https://github.com/mikaelnelson/homebridge-kumo) for getting started with the Kumo API. In v.1.1, I have incorporated information from [pykumo](https://github.com/dlarrick/pykumo) and [homebridge-kumo-local](https://github.com/monteroman/homebridge-kumo-local) to allow direct IP and *rapid* control of devices on the network. 
