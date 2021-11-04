@@ -50,10 +50,11 @@ export class KumoPlatformAccessory_ductless {
     // set accessory information
     
     if (accessory.context.zoneTable.unitType !== undefined) {
+      const unitType: string = this.accessory.context.zoneTable.unitType;
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
         .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.serial)
-        .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.zoneTable.unitType);
+        .setCharacteristic(this.platform.Characteristic.Model, unitType);
     } else {
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
