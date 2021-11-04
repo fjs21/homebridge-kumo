@@ -104,12 +104,18 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         if (this.config.directAccess) {
           existingAccessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
+          if(existingAccessory.context.device === null) {
+            this.log.error("Failed to connect to device IP (%s)", device.serial);
+            existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
+            this.context.directAccess = false;
+            this.log.info("Disabling directAccess to Kumo devices");
+          }
         } else {
           existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
         }
         this.log.info(existingAccessory.context.device);
 
-        this.api.updatePlatformAccessories([existingAccessory]);
+        //this.api.updatePlatformAccessories([existingAccessory]);
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
@@ -124,7 +130,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         } else {
           this.log.info('Initializing "%s" of unitType "%s" as generic (unspecified) unit.', 
             existingAccessory.displayName, existingAccessory.context.zoneTable.unitType);
-          if(existingAccessory.context.device === undefined){
+          if(existingAccessory.context.device === undefined || existingAccessory.context.device === null){
             this.log.error('%s: No device information returned. Cannot initialize.', existingAccessory.displayName);
             continue;
           }
@@ -166,6 +172,12 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         if (this.config.directAccess) {
           accessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
+          if(existingAccessory.context.device === null) {
+            this.log.error("Failed to connect to device IP (%s)", device.serial);
+            this.context.directAccess = false;
+            this.log.info("Disabling directAccess to Kumo devices");
+            existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
+          }
         } else {
           accessory.context.device = await this.kumo.queryDevice(device.serial);
         }
@@ -185,7 +197,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         } else {
           this.log.info('Initializing "%s" of unitType "%s" as generic (unspecified) unit.', 
             accessory.displayName, accessory.context.zoneTable.unitType);
-          if(accessory.context.device === undefined){
+          if(accessory.context.device === undefined || accessory.context.device === null){
             this.log.error('%s: No device information returned. Cannot initialize.', accessory.displayName);
             continue;
           }
