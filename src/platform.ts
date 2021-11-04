@@ -39,7 +39,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     // in order to ensure they weren't added to homebridge already. This event can also be used
     // to start discovery of new accessories.
     this.api.on('didFinishLaunching', () => {
-      log.debug('Executed didFinishLaunching callback');
+      this.log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
       this.discoverDevices();
     });
@@ -64,10 +64,11 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
   
   async discoverDevices() {
 
-    const flag = await this.kumo.acquireSecurityToken();
-    if(!flag){
-      this.log.error('Failed to login. Restart Homebridge to try again.');
-      return false;
+    let flag = await this.kumo.acquireSecurityToken();
+    while (!flag) {
+      this.log.error('Failed to login. Will retry in 10 secs.');
+      flag = await this.kumo.acquireSecurityToken();
+      await this.sleep(10000);
     }
 
     // loop over the discovered devices and register each one if it has not already been registered
@@ -116,7 +117,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        if(existingAccessory.context.zoneTable.unitType === 'ductless' 
+        if(existingAccessory.context.zoneTable.unitType === 'ductless2' 
           || existingAccessory.context.zoneTable.unitType === 'mvz') {
           this.log.info('Initializing "%s" as ductless unit.', existingAccessory.displayName);
           if(this.config.simpleDuctless) {
@@ -271,4 +272,9 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     // Nothing special to do - make this opener visible.
     return defaultReturnValue;
   }
+
+  private sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
 }

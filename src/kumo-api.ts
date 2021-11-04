@@ -202,7 +202,7 @@ export class KumoApi {
       return true;
     }
 
-    // We want to throttle how often we call this API to no more than once every 5 minutes.
+    // We want to throttle how often we call this API to no more than once every 1 minutes.
     if((now - this.lastAuthenticateCall) < (1 * 60 * 1000)) {
       this.log.warn('Kumo API: throttling acquireSecurityToken API call.');
 
@@ -232,7 +232,7 @@ export class KumoApi {
         method: 'POST',
         headers: this.headers,
         body: JSON.stringify([this.securityToken, [serial]]),
-      }, 10000, 'Time out on Kumo cloud connection.');
+      }, 2000, 'Time out on Kumo cloud connection.');
       // check response from server
       if (response.status >= 200 && response.status <= 299) {
         data = await response.json();
@@ -441,7 +441,7 @@ export class KumoApi {
         headers: {'Accept': 'application/json, text/plain, */*',
           'Content-Type': 'application/json'},
         body: post_data,
-      }, 5000, 'Time out on local IP connection.');
+      }, 2000, 'Time out on local IP connection.');
       // check response from server
       if (response.status >= 200 && response.status <= 299) {
         data = await response.json();
