@@ -117,7 +117,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        if(existingAccessory.context.zoneTable.unitType === 'ductless2' 
+        if(existingAccessory.context.zoneTable.unitType === 'ductless' 
           || existingAccessory.context.zoneTable.unitType === 'mvz') {
           this.log.info('Initializing "%s" as ductless unit.', existingAccessory.displayName);
           if(this.config.simpleDuctless) {

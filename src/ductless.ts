@@ -49,7 +49,7 @@ export class KumoPlatformAccessory_ductless {
 
     // set accessory information
     
-    if (accessory.context.zoneTable.unitType !== undefined) {
+    if (accessory.context.zoneTable.unitType !== undefined && accessory.context.zoneTable.unitType !== null) {
       const unitType: string = this.accessory.context.zoneTable.unitType;
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
