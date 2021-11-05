@@ -402,7 +402,7 @@ export class KumoPlatformAccessory_ductless {
   private updateCurrentTemperature() {
     // CurrentTemperature
     let currentValue: number = <number>this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value;
-    if(this.accessory.context.device.roomtemp !== undefined) {
+    if(this.accessory.context.device.roomTemp !== undefined) {
       currentValue = this.accessory.context.device.roomTemp;
     } else if(this.accessory.context.device.room_temp !== undefined) {
       currentValue = this.accessory.context.device.room_temp;
