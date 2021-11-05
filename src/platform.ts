@@ -64,11 +64,19 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
   
   async discoverDevices() {
 
+    // login to Kumo cloud and acquire security token
     let flag = await this.kumo.acquireSecurityToken();
     while (!flag) {
       this.log.error('Failed to login. Will retry in 10 secs.');
-      flag = await this.kumo.acquireSecurityToken();
       await this.sleep(10000);
+      flag = await this.kumo.acquireSecurityToken();
+    }
+    // config that login was succesful
+    if(flag) {
+      this.log.info('Completed login.');
+    } else {
+      this.log.error('Login failed. Aborting initialization.');
+      return;
     }
 
     // loop over the discovered devices and register each one if it has not already been registered
@@ -98,7 +106,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
         existingAccessory.context.zoneTable = device.zoneTable;
         
-        this.log.info(device.zoneTable);
+        this.log.debug(device.zoneTable);
 
         if (this.config.directAccess) {
           existingAccessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
@@ -107,11 +115,15 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
             existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
             this.config.directAccess = false;
             this.log.info('Disabling directAccess to Kumo devices');
+          } else {
+            this.log.info('directAccess successful.');
           }
         } else {
+          this.log.info('Using Kumo Cloud API for device control');
           existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
         }
-        this.log.info(existingAccessory.context.device);
+        
+        this.log.debug(existingAccessory.context.device);
 
         //this.api.updatePlatformAccessories([existingAccessory]);
 
@@ -166,7 +178,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         accessory.context.serial = device.serial;
         accessory.context.zoneTable = device.zoneTable;
         
-        this.log.info(device.zoneTable);
+        this.log.debug(device.zoneTable);
 
         if (this.config.directAccess) {
           accessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
@@ -177,10 +189,11 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
             accessory.context.device = await this.kumo.queryDevice(device.serial);
           }
         } else {
+          this.log.info('Using Kumo Cloud API for device control');
           accessory.context.device = await this.kumo.queryDevice(device.serial);
         }
 
-        this.log.info(accessory.context.device);
+        this.log.debug(accessory.context.device);
         
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
