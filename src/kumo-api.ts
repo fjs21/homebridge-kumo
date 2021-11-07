@@ -232,7 +232,7 @@ export class KumoApi {
         method: 'POST',
         headers: this.headers,
         body: JSON.stringify([this.securityToken, [serial]]),
-      }, 2000, 'Time out on Kumo cloud connection.');
+      }, 5000, 'Time out on Kumo cloud connection.');
       // check response from server
       if (response.status >= 200 && response.status <= 299) {
         data = await response.json();

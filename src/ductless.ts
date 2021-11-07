@@ -161,7 +161,7 @@ export class KumoPlatformAccessory_ductless {
     //this.historyService.log = this.platform.log; // swicthed off to prevent flooding the log
 
     setInterval(() => {
-      this.platform.log.debug('Running interval');
+      this.platform.log.debug('%s: Running interval', this.accessory.displayName);
       this.updateAccessoryCharacteristics();
     }, 1000 * 60 * historyInterval);
   }
@@ -272,7 +272,7 @@ export class KumoPlatformAccessory_ductless {
       // queryDevice via Kumo Cloud
       device = await this.platform.kumo.queryDevice(this.accessory.context.serial);   
       if(!device) {
-        this.platform.log.warn('queryDevice failed.');
+        this.platform.log.warn('%s (queryDevice): failed.', this.accessory.displayName);
         return false;
       }
       // set last contact with device time and  add LAG to ensure command went through
@@ -280,10 +280,10 @@ export class KumoPlatformAccessory_ductless {
      
       if(lastcontact < this.lastupdate) {
         // last contact occured before last set operation
-        this.platform.log.debug('queryDevice: No recent update from Kumo cloud');
+        this.platform.log.debug('%s (queryDevice): No recent update from Kumo cloud', this.accessory.displayName);
         return false;
       }
-      this.platform.log.debug('queryDevice success.');  
+      this.platform.log.debug('%s (queryDevice): success.', this.accessory.displayName);  
 
     } else {
       // queryDevice via Direct IP connection
@@ -291,7 +291,8 @@ export class KumoPlatformAccessory_ductless {
       if ((Date.now() - KUMO_DEVICE_WAIT) < this.lastquery) {
         //this.platform.log.debug('Recent update from device already performed.');
         if(!this.accessory.context.device) {
-          this.platform.log.warn('queryDevice_Direct: accessory context not set - bad IP? reverting to cloud control');
+          this.platform.log.warn('%s (queryDevice_Direct): accessory context not set - bad IP? reverting to cloud control',
+            this.accessory.displayName);
           this.directAccess = false;
           return false;
         }
@@ -301,10 +302,10 @@ export class KumoPlatformAccessory_ductless {
      
       device = await this.platform.kumo.queryDevice_Direct(this.accessory.context.serial);
       if(!device) {
-        this.platform.log.warn('queryDevice_Direct failed.');
+        this.platform.log.warn('%s (queryDevice_Direct): failed.', this.accessory.displayName);
         return false;
       }
-      this.platform.log.debug('queryDevice_Direct success.');
+      this.platform.log.debug('%s (queryDevice_Direct): success.', this.accessory.displayName);
     }
 
     // update device contect
@@ -408,7 +409,7 @@ export class KumoPlatformAccessory_ductless {
       currentValue = this.accessory.context.device.room_temp;
     } else {
       // no valid target temperature reported from device
-      this.platform.log.warn('Heater/Cooler: Unable to find target temp');
+      this.platform.log.warn('%s: Unable to find current temp', this.accessory.displayName);
       this.platform.log.warn(this.accessory.context.device);
     }
     this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, currentValue);
@@ -546,7 +547,7 @@ export class KumoPlatformAccessory_ductless {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('Heater/Cooler: set Active from %s to %s', value_old, value);  
+      this.platform.log.info('%s (Heater/Cooler): set Active from %s to %s', this.accessory.displayName, value_old, value);  
       // switch off dehumidifier accessory
       this.Dehumidifier.updateCharacteristic(this.platform.Characteristic.On, 0);
     }
@@ -581,7 +582,7 @@ export class KumoPlatformAccessory_ductless {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('Heater/Cooler: set TargetState from %s to %s.', value_old, value);  
+      this.platform.log.info('%s (Heater/Cooler): set TargetState from %s to %s.', this.accessory.displayName, value_old, value);  
     }
     callback(null);
   }  
@@ -607,7 +608,7 @@ export class KumoPlatformAccessory_ductless {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('Heater/Cooler: set CoolingThresholdTemperature to %s', value);
+    this.platform.log.info('%s (Heater/Cooler): set CoolingThresholdTemperature to %s', this.accessory.displayName, value);
     callback(null);
   }  
 
@@ -632,7 +633,7 @@ export class KumoPlatformAccessory_ductless {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('Heater/Cooler: set HeatingThresholdTemperature to %s.', value);
+    this.platform.log.info('%s (Heater/Cooler): set HeatingThresholdTemperature to %s.', this.accessory.displayName, value);
     callback(null);
   }  
 
@@ -674,7 +675,7 @@ export class KumoPlatformAccessory_ductless {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('Fan: set Active to %s.', value);
+      this.platform.log.info('%s (Fan): set Active to %s.', this.accessory.displayName, value);
     }
     callback(null);
   }
@@ -708,7 +709,7 @@ export class KumoPlatformAccessory_ductless {
       } else {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
-      this.platform.log.info('Fan: set RotationSpeed from %s to %s.', speed_old, speed);
+      this.platform.log.info('%s (Fan): set RotationSpeed from %s to %s.', this.accessory.displayName, speed_old, speed);
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, Math.floor(speed * 100/6));
       this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, Math.floor(speed * 100/6));
     }
@@ -734,7 +735,7 @@ export class KumoPlatformAccessory_ductless {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('Fan: set Swing to %s.', value);  
+    this.platform.log.info('%s (Fan): set Swing to %s.', this.accessory.displayName, value);  
     callback(null);
   }
 
@@ -765,7 +766,7 @@ export class KumoPlatformAccessory_ductless {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('PowerSwitch: set Active to %s.', value);  
+    this.platform.log.info('%s (PowerSwitch): set Active to %s.', this.accessory.displayName, value);  
     callback(null);
   }
 
@@ -799,7 +800,7 @@ export class KumoPlatformAccessory_ductless {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('DehumidiferSwitch: set Active to %s.', value);  
+    this.platform.log.info('%s (DehumidiferSwitch): set Active to %s.', this.accessory.displayName, value);  
     callback(null);
   }
 

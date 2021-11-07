@@ -32,13 +32,15 @@ export class KumoPlatformAccessory {
     private readonly accessory: PlatformAccessory,
   ) {
     this.directAccess = this.platform.config.directAccess;
+
     // this accessory does not support direct access currently (2020-10-12)
+    this.platform.log.warn('%s: This accessoty is under development. Direct Access via IP is not supported.', this.accessory.displayName);
     this.directAccess = false; 
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mitsubishi')
-      .setCharacteristic(this.platform.Characteristic.Model, 'not reported by device')
+      .setCharacteristic(this.platform.Characteristic.Model, 'not implimented')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.serial);
 
     this.Thermostat = this.accessory.getService(
@@ -214,7 +216,7 @@ export class KumoPlatformAccessory {
       // queryDevice via Kumo Cloud
       device = await this.platform.kumo.queryDevice(this.accessory.context.serial);   
       if(!device) {
-        this.platform.log.warn('queryDevice failed.');
+        this.platform.log.warn('%s (queryDevice): failed.', this.accessory.displayName);
         return false;
       }
       // set last contact with device time and  add LAG to ensure command went through
@@ -222,10 +224,10 @@ export class KumoPlatformAccessory {
      
       if(lastcontact < this.lastupdate) {
         // last contact occured before last set operation
-        this.platform.log.debug('queryDevice: No recent update from Kumo cloud');
+        this.platform.log.debug('%s (queryDevice): No recent update from Kumo cloud', this.accessory.displayName);
         return false;
       }
-      this.platform.log.debug('queryDevice success.');  
+      this.platform.log.debug('%s (queryDevice):success.', this.accessory.displayName);  
 
     } else {
       // queryDevice via Direct IP connection
@@ -233,7 +235,8 @@ export class KumoPlatformAccessory {
       if ((Date.now() - KUMO_DEVICE_WAIT) < this.lastquery) {
         //this.platform.log.debug('Recent update from device already performed.');
         if(!this.accessory.context.device) {
-          this.platform.log.warn('queryDevice_Direct: accessory context not set - bad IP? reverting to cloud control');
+          this.platform.log.warn('%s (queryDevice_Direct): accessory context not set - bad IP? reverting to cloud control', 
+            this.accessory.displayName);
           this.directAccess = false;
           return false;
         }
@@ -243,10 +246,10 @@ export class KumoPlatformAccessory {
      
       device = await this.platform.kumo.queryDevice_Direct(this.accessory.context.serial);
       if(!device) {
-        this.platform.log.warn('queryDevice_Direct failed.');
+        this.platform.log.warn('%s (queryDevice_Direct): failed.', this.accessory.displayName);
         return false;
       }
-      this.platform.log.debug('queryDevice_Direct success.');
+      this.platform.log.debug('%s (queryDevice_Direct): success.', this.accessory.displayName);
     }
 
     // update device contect
@@ -273,7 +276,7 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
     } else if (operation_mode === 2) {
       // set to dehumidfy
-      this.platform.log.info('%s: CurrentState: Dehumidify ON', this.accessory.displayName);
+      this.platform.log.info('%s: CurrentState: Dehumidify ON. ', this.accessory.displayName);
       currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.OFF; 
     } else {
       this.platform.log.warn('%s: CurrentState did not find matching mode: %s, %s\nPlease contact the developer', 
@@ -316,13 +319,13 @@ export class KumoPlatformAccessory {
     // TargetTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature).value;
     if(this.accessory.context.device.set_temp_a !== undefined && 
-        this.accessory.context.device.set_temp_a !== 'null') {
-      this.platform.log.debug('%s: TargetTemperature=%s', 
+        this.accessory.context.device.set_temp_a !== null) {
+      this.platform.log.debug('%s: TargetTemperature = %s', 
         this.accessory.displayName, this.accessory.context.device.set_temp_a);
       currentValue = this.accessory.context.device.set_temp_a;
     } else if(this.accessory.context.device.setTemp !== undefined &&
-        this.accessory.context.device.setTemp !== 'null') {
-      this.platform.log.debug('%s: TargetTemperature=%s', 
+        this.accessory.context.device.setTemp !== null) {
+      this.platform.log.debug('%s: TargetTemperature = %s', 
         this.accessory.displayName, this.accessory.context.device.setTemp);
       currentValue = this.accessory.context.device.setTemp;
     } else {
@@ -338,13 +341,13 @@ export class KumoPlatformAccessory {
     // CurrentTemperature
     let currentValue: number = <number>this.Thermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature).value;
     if(this.accessory.context.device.roomTemp !== undefined &&
-        this.accessory.context.device.roomTemp !== 'null') {
-      this.platform.log.debug('%s: CurrentTemperature=%s', 
+        this.accessory.context.device.roomTemp !== null) {
+      this.platform.log.debug('%s: CurrentTemperature = %s', 
         this.accessory.displayName, this.accessory.context.device.roomTemp);
       currentValue = this.accessory.context.device.roomTemp;
     } else if(this.accessory.context.device.room_temp_a !== undefined &&
-        this.accessory.context.device.room_temp_a !== 'null') {
-      this.platform.log.debug('%s: CurrentTemperature=%s', 
+        this.accessory.context.device.room_temp_a !== null) {
+      this.platform.log.debug('%s: CurrentTemperature = %s', 
         this.accessory.displayName, this.accessory.context.device.room_temp_a);
       currentValue = this.accessory.context.device.room_temp_a;
     } else {
@@ -401,6 +404,7 @@ export class KumoPlatformAccessory {
       currentValue = (fanStateMap[fanSpeed]) * 100/6;  
     } else {
       // fan rotation speed not reported from device
+      this.platform.log.warn('%s (Fan): rotation speed not reported from device.', this.accessory.displayName);
       return;
     }
     this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
@@ -419,7 +423,7 @@ export class KumoPlatformAccessory {
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     } else {
       // air direction not reported from device
-      this.platform.log.warn('%s Fan: Unable to get Swing Mode state: %s, %s', 
+      this.platform.log.warn('%s (Fan): Unable to get Swing Mode state: %s, %s', 
         this.accessory.displayName, air_direction, vaneDir);
       currentValue = this.platform.Characteristic.SwingMode.SWING_DISABLED;
     }
@@ -479,7 +483,7 @@ export class KumoPlatformAccessory {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('%s Thermostat: set Active from %s to %s',
+      this.platform.log.info('%s (Thermostat): set Active from %s to %s',
         this.accessory.displayName, value_old, value);  
     }
     callback(null);
@@ -513,7 +517,7 @@ export class KumoPlatformAccessory {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('%s Thermostat: set TargetState from %s to %s.', 
+      this.platform.log.info('%s (Thermostat): set TargetState from %s to %s.', 
         this.accessory.displayName, value_old, value);  
     }
     callback(null);
@@ -534,7 +538,7 @@ export class KumoPlatformAccessory {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('%s Thermostat: set TargetTemperature to %s', 
+    this.platform.log.info('%s (Thermostat): set TargetTemperature to %s', 
       this.accessory.displayName, value);
     callback(null);
   }  
@@ -576,7 +580,7 @@ export class KumoPlatformAccessory {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
-      this.platform.log.info('%s Fan: set Active to %s.', 
+      this.platform.log.info('%s (Fan): set Active to %s.', 
         this.accessory.displayName, value);
     }
     callback(null);
@@ -612,7 +616,7 @@ export class KumoPlatformAccessory {
       } else {
         this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
-      this.platform.log.info('%s Fan: set RotationSpeed from %s to %s.', 
+      this.platform.log.info('%s (Fan): set RotationSpeed from %s to %s.', 
         this.accessory.displayName, speed_old, speed);
     }
     this.lastupdate = Date.now();
@@ -637,7 +641,7 @@ export class KumoPlatformAccessory {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('%s Fan: set Swing to %s.',
+    this.platform.log.info('%s (Fan): set Swing to %s.',
       this.accessory.displayName, value);  
     callback(null);
   }
@@ -669,7 +673,7 @@ export class KumoPlatformAccessory {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('%s PowerSwitch: set Active to %s.', 
+    this.platform.log.info('%s (PowerSwitch): set Active to %s.', 
       this.accessory.displayName, value);  
     callback(null);
   }
@@ -704,7 +708,7 @@ export class KumoPlatformAccessory {
       this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
     }
     this.lastupdate = Date.now();
-    this.platform.log.info('%s DehumidiferSwitch: set Active to %s.', 
+    this.platform.log.info('%s (DehumidiferSwitch): set Active to %s.', 
       this.accessory.displayName, value);  
     callback(null);
   }
@@ -713,5 +717,3 @@ export class KumoPlatformAccessory {
     return Math.round(num*2)/2;
   }
 }
-
-
