@@ -26,7 +26,7 @@
   "dependencies": {
     "base-64": "^1.0.0",
     "fakegato-history": "^0.6.1",
-    "node-fetch": "^2.6.7",
+    "node-fetch": "^3.1.1",
     "node-forge": ">1.0.0",
     "sjcl": "^1.0.8"
   },
