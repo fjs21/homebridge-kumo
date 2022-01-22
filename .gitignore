@@ -1,8 +1,9 @@
 # Ignore compiled code
 dist
 
-.*
-!.gitignore
+.DS_Store
+._DS_Store
+src/.*
 
 # ------------- Defaults ------------- #
 
