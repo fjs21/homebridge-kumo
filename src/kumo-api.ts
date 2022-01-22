@@ -1,5 +1,5 @@
 import { Logger } from 'homebridge';
-import fetchTimeout from 'fetch-timeout';
+import { fetchTimeout } from './fetch-timeout';
 import util from 'util';
 
 import sjcl from 'sjcl';
