@@ -1,8 +1,8 @@
-const _importDynamic = new Function('modulePath', 'return import(modulePath)')
+const _importDynamic = new Function('modulePath', 'return import(modulePath)');
 
 async function fetch(...args) {
-  const {default: fetch} = await _importDynamic('node-fetch')
-  return fetch(...args)
+  const {default: fetch} = await _importDynamic('node-fetch');
+  return fetch(...args);
 }
 
 /**
@@ -35,4 +35,4 @@ export function fetchTimeout(url, options, timeout, error) {
   options = options || {};
   timeout = timeout || 10000;
   return timeoutPromise(fetch(url, options), timeout, error);
-};
+}
