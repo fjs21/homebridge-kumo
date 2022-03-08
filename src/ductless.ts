@@ -751,13 +751,11 @@ export class KumoPlatformAccessory_ductless {
       this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
     } else {
       // turn on Fan with auto fanSpeed and airDirection
-      command = {'power':1, 'operationMode':7, 'fanSpeed':0, 'airDirection':0};
-      commandDirect = {'mode':'vent', 'fanSpeed':'superQuiet', 'vaneDir':'auto'}; 
+      command = {'power':1, 'operationMode':7, 'fanSpeed':0};
+      commandDirect = {'mode':'vent', 'fanSpeed':'superQuiet'}; 
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
       this.Fan.updateCharacteristic(this.platform.Characteristic.Active, 1);
       this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-      this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, 
-        this.platform.Characteristic.SwingMode.SWING_DISABLED);
     }
   
     if(!this.directAccess) {
@@ -784,13 +782,11 @@ export class KumoPlatformAccessory_ductless {
       
     } else {
       // turn on Dehumidifer - set HeaterCooler to OFF, fan to AUTO, vane to SWING_DISABLED
-      command = {'power':1, 'operationMode':2, 'fanSpeed':0, 'airDirection':0};
-      commandDirect = {'mode':'dry', 'fanSpeed':'auto', 'vaneDir':'auto'}; 
+      command = {'power':1, 'operationMode':2, 'fanSpeed':0};
+      commandDirect = {'mode':'dry', 'fanSpeed':'auto'}; 
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.SwingMode, this.platform.Characteristic.SwingMode.SWING_DISABLED);
       this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-      this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, this.platform.Characteristic.SwingMode.SWING_DISABLED);
       this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.On, 1);
     }
   
