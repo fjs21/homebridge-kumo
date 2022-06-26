@@ -126,6 +126,10 @@ export class KumoApi {
     if(!response) {
       this.log.warn('Kumo API: Unable to authenticate. Will try later.');
       return false;
+    } else if (!(response.status >= 200 && response.status <= 299)) {
+      this.log.warn('Kumo API: Authenticate request returned status %d %s. Will try later.',
+        response.status, response.statusText);
+      return false;
     }
 
     let data;
@@ -135,7 +139,7 @@ export class KumoApi {
       this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 6 }));
     } catch(error) {
       // if cannot parse response
-      this.log.error('Kumo API: error parsing json. %s', data);
+      this.log.error('Kumo API: error parsing json. %s', error);
       return false;
     }
 
@@ -237,7 +241,8 @@ export class KumoApi {
       if (response.status >= 200 && response.status <= 299) {
         data = await response.json();
       } else {
-        this.log.warn('Kumo API: response error: %s', serial);
+        this.log.warn('Kumo API: response error from device: %d %s',
+          response.status, response.statusText);
         return null as unknown as KumoDevice; 
       } 
     } catch(error) {
@@ -446,7 +451,8 @@ export class KumoApi {
       if (response.status >= 200 && response.status <= 299) {
         data = await response.json();
       } else {
-        this.log.warn('Kumo API: response error from device: %s', serial);
+        this.log.warn('Kumo API: response error from device: %d %s',
+          response.status, response.statusText);
         return null; 
       } 
     } catch(error) {
