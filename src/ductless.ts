@@ -20,11 +20,13 @@ export class KumoPlatformAccessory_ductless {
   private Fan: Service;
   private PowerSwitch: Service;
   private Dehumidifier: Service;
+  private Humdity: Service | null;
 
   private lastupdate;
   private lastquery;
 
   private directAccess;
+  private useExternalSensor;
 
   private historyService: fakegato.FakeGatoHistoryService;
 
@@ -33,6 +35,7 @@ export class KumoPlatformAccessory_ductless {
     private readonly accessory: PlatformAccessory,
   ) {
     this.directAccess = this.platform.config.directAccess;
+    this.useExternalSensor = this.platform.config.useExternalSensor;
 
     // determine device profile and additional sensors to tailor accessory to
     // the capabilities of the kumo device
@@ -78,6 +81,13 @@ export class KumoPlatformAccessory_ductless {
     this.HeaterCooler.setCharacteristic(this.platform.Characteristic.Name, 'Heater/Cooler');
     this.Fan.setCharacteristic(this.platform.Characteristic.Name, 'Fan');
     this.PowerSwitch.setCharacteristic(this.platform.Characteristic.Name, 'Power');
+
+    this.Humdity = this.useExternalSensor && this.directAccess ? this.accessory.getService(
+      this.platform.Service.HumiditySensor) || this.accessory.addService(this.platform.Service.HumiditySensor) : null;
+
+    if (this.Humdity) {
+      this.Humdity.setCharacteristic(this.platform.Characteristic.Name, 'Humidity Sensor');
+    }
 
     // create handlers for characteristics
     this.HeaterCooler.getCharacteristic(this.platform.Characteristic.Active)
@@ -146,6 +156,11 @@ export class KumoPlatformAccessory_ductless {
     // this.Dehumidifier.getCharacteristic(this.platform.Characteristic.Active)
     //   .on('get', this.handleDehumidiferActiveGet.bind(this))
     //   .on('set', this.handleDehumidiferActiveSet.bind(this));
+
+    if (this.Humdity) {
+      this.Humdity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
+        .on('get', this.handleHumidityGet.bind(this));
+    }
 
     this.updateDevice();
 
@@ -239,6 +254,14 @@ export class KumoPlatformAccessory_ductless {
     callback(null, this.Dehumidifier.getCharacteristic(this.platform.Characteristic.On).value);
   }
 
+  async handleHumidityGet(callback) {
+    if (!this.Humdity) {
+      return;
+    }
+    await this.updateAccessoryCharacteristics();
+    callback(null, this.Humdity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity).value);
+  }
+
   async updateAccessoryCharacteristics() {
     // updateAccessoryCharacteristics
 
@@ -259,6 +282,7 @@ export class KumoPlatformAccessory_ductless {
     this.updateFanSwingMode();
     this.updatePowerSwitchOn();
     this.updateDehumidifierSwitchOn();
+    this.updateCurrentRelativeHumidity();
 
     //this.platform.log.debug('updateAccessoryCharacteristic completed (%s)', this.accessory.context.serial)
     return true;
@@ -306,12 +330,37 @@ export class KumoPlatformAccessory_ductless {
         return false;
       }
       this.platform.log.debug('%s (queryDevice_Direct): success.', this.accessory.displayName);
+
+      if (this.Humdity) {
+        this.platform.log.info('querying external sensors on %s', this.accessory.context.serial);
+        const sensorData = await this.platform.kumo.queryDeviceSensors_Direct(this.accessory.context.serial);
+        if (sensorData) {
+          this.accessory.context.sensors = sensorData;
+        }
+      }
     }
 
     // update device contect
     this.accessory.context.device = device;          
     return true;
-  } 
+  }
+
+  private updateCurrentRelativeHumidity() {
+    if (!this.Humdity) {
+      return;
+    }
+    let currentValue: number = <number>this.Humdity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity).value;
+    if (this.accessory.context.sensors.length) {
+      const ourSensor = this.accessory.context.sensors[0];
+      currentValue = ourSensor.humidity;
+      this.platform.log.debug('setting humidity to %s', currentValue);
+
+      if (ourSensor.battery) {
+        this.Humdity.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, ourSensor.battery < 10);
+      }
+    }
+    this.Humdity.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, currentValue);
+  }
 
   private updateHeaterCoolerActive() {
     // HeaterCooler Active

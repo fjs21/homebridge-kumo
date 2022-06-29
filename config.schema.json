@@ -22,6 +22,11 @@
             "type": "boolean",
             "required": false
         },
+        "useExternalSensor": {
+            "title": "Use external sensor? (requires direct access)",
+            "type": "boolean",
+            "required": false
+        },
         "simpleDuctless": {
             "title": "Show simple HeaterCooler accessory only?",
             "type": "boolean",
