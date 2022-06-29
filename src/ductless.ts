@@ -33,9 +33,10 @@ export class KumoPlatformAccessory_ductless {
   constructor(
     private readonly platform: KumoHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly hasSensors: boolean,
   ) {
     this.directAccess = this.platform.config.directAccess;
-    this.useExternalSensor = this.platform.config.useExternalSensor;
+    this.useExternalSensor = hasSensors;
 
     // determine device profile and additional sensors to tailor accessory to
     // the capabilities of the kumo device
