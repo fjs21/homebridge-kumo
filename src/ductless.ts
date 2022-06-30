@@ -26,7 +26,6 @@ export class KumoPlatformAccessory_ductless {
   private lastquery;
 
   private directAccess;
-  private useExternalSensor;
 
   private historyService: fakegato.FakeGatoHistoryService;
 
@@ -35,8 +34,9 @@ export class KumoPlatformAccessory_ductless {
     private readonly accessory: PlatformAccessory,
   ) {
     this.directAccess = this.platform.config.directAccess;
-    this.useExternalSensor = this.directAccess && this.accessory.context.device.activeThermistor !== undefined && this.accessory.context.device.activeThermistor !== "unset"
-    if (this.useExternalSensor) {
+
+    const useExternalSensor = this.directAccess && this.accessory.context.device.activeThermistor !== undefined && this.accessory.context.device.activeThermistor !== "unset"
+    if (useExternalSensor) {
       this.platform.log.info('device %s uses external sensor %s', this.accessory.context.serial, this.accessory.context.device.activeThermistor)
     }
 
@@ -85,7 +85,7 @@ export class KumoPlatformAccessory_ductless {
     this.Fan.setCharacteristic(this.platform.Characteristic.Name, 'Fan');
     this.PowerSwitch.setCharacteristic(this.platform.Characteristic.Name, 'Power');
 
-    this.Humdity = this.useExternalSensor && this.directAccess ? this.accessory.getService(
+    this.Humdity = useExternalSensor ? this.accessory.getService(
       this.platform.Service.HumiditySensor) || this.accessory.addService(this.platform.Service.HumiditySensor) : null;
 
     if (this.Humdity) {
