@@ -335,7 +335,7 @@ export class KumoPlatformAccessory_ductless {
       this.platform.log.debug('%s (queryDevice_Direct): success.', this.accessory.displayName);
 
       if (this.Humdity) {
-        this.platform.log.info('querying external sensors on %s', this.accessory.context.serial);
+        this.platform.log.debug('querying external sensors on %s', this.accessory.context.serial);
         const sensorData = await this.platform.kumo.queryDeviceSensors_Direct(this.accessory.context.serial);
         if (sensorData) {
           this.accessory.context.sensors = sensorData;
@@ -353,7 +353,7 @@ export class KumoPlatformAccessory_ductless {
       return;
     }
     let currentValue: number = <number>this.Humdity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity).value;
-    if (this.accessory.context.sensors.length) {
+    if (this.accessory.context.sensors && this.accessory.context.sensors.length) {
       const ourSensor = this.accessory.context.sensors[0];
       currentValue = ourSensor.humidity;
       this.platform.log.debug('setting humidity to %s', currentValue);
