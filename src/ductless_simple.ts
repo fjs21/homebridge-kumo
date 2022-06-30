@@ -366,6 +366,9 @@ export class KumoPlatformAccessory_ductless_simple {
 
       if (ourSensor.battery) {
         this.Humdity.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, ourSensor.battery < 10);
+        if (ourSensor.battery < 10) {
+          this.platform.log.warn('!!!The sensor attached to device %s has a low battery!!!', this.accessory.context.serial)
+        }
       }
     }
     this.Humdity.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, currentValue);
