@@ -30,10 +30,12 @@ export class KumoPlatformAccessory_ductless_simple {
   constructor(
     private readonly platform: KumoHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
-    private readonly hasSensors: boolean,
   ) {
     this.directAccess = this.platform.config.directAccess;
-    this.useExternalSensor = hasSensors;
+    this.useExternalSensor = this.accessory.context.device.activeThermistor !== undefined && this.accessory.context.device.activeThermistor !== "unset"
+    if (this.useExternalSensor) {
+      this.platform.log.info('device %s uses external sensor %s', this.accessory.context.serial, this.accessory.context.device.activeThermistor)
+    }
 
     // set accessory information
     if (accessory.context.zoneTable.unitType !== undefined && accessory.context.zoneTable.unitType !== null) {

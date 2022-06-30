@@ -132,12 +132,10 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         if(existingAccessory.context.zoneTable.unitType === 'ductless' 
           || existingAccessory.context.zoneTable.unitType === 'mvz') {
           this.log.info('Initializing "%s" as ductless unit.', existingAccessory.displayName);
-          this.log.info('seeing if "%s" has a sensor attached', existingAccessory.displayName);
-          const hasSensors = this.config.directAccess && await this.kumo.queryDeviceSensors_Direct(device.serial);
           if(this.config.simpleDuctless) {
-            new KumoPlatformAccessory_ductless_simple(this, existingAccessory, hasSensors);
+            new KumoPlatformAccessory_ductless_simple(this, existingAccessory);
           } else {
-            new KumoPlatformAccessory_ductless(this, existingAccessory, hasSensors);
+            new KumoPlatformAccessory_ductless(this, existingAccessory);
           }
         } else {
           this.log.info('Initializing "%s" of unitType "%s" as generic (unspecified) unit.', 
@@ -150,12 +148,10 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
           if((existingAccessory.context.device.sp_heat !== undefined || existingAccessory.context.device.spHeat !== undefined) && (
             existingAccessory.context.device.sp_cool !== undefined || existingAccessory.context.device.spCool !== undefined)) {
             this.log.info('%s: Found heat and cool settings will use ductless accessory', existingAccessory.displayName);
-            this.log.info('seeing if "%s" has a sensor attached', existingAccessory.displayName);
-            const hasSensors = this.config.directAccess && await this.kumo.queryDeviceSensors_Direct(device.serial);
             if(this.config.simpleDuctless) {
-              new KumoPlatformAccessory_ductless_simple(this, existingAccessory, hasSensors);
+              new KumoPlatformAccessory_ductless_simple(this, existingAccessory);
             } else {
-              new KumoPlatformAccessory_ductless(this, existingAccessory, hasSensors);
+              new KumoPlatformAccessory_ductless(this, existingAccessory);
             }
           } else {         
             this.log.info('%s: Using platformaAccessory.ts accessory.', existingAccessory.displayName);
@@ -204,12 +200,10 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         if(accessory.context.zoneTable.unitType === 'ductless' 
           || accessory.context.zoneTable.unitType === 'mvz') {
           this.log.info('Initializing "%s" as ductless unit.', device.label);
-          this.log.info('seeing if "%s" has a sensor attached', device.label);
-          const hasSensors = this.config.directAccess && await this.kumo.queryDeviceSensors_Direct(device.serial);
           if(this.config.simpleDuctless) {
-            new KumoPlatformAccessory_ductless_simple(this, accessory, hasSensors);
+            new KumoPlatformAccessory_ductless_simple(this, accessory);
           } else {
-            new KumoPlatformAccessory_ductless(this, accessory, hasSensors);
+            new KumoPlatformAccessory_ductless(this, accessory);
           }
         } else {
           this.log.info('Initializing "%s" of unitType "%s" as generic (unspecified) unit.', 
@@ -222,12 +216,10 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
           if((accessory.context.device.sp_heat !== undefined || accessory.context.device.spHeat !== undefined ) && (
             accessory.context.device.sp_cool !== undefined || accessory.context.device.spCool !== undefined )) {
             this.log.info('%s: Found heat and cool settings will use ductless accessory', accessory.displayName);
-            this.log.info('seeing if "%s" has a sensor attached', device.displayName);
-            const hasSensors = this.config.directAccess && await this.kumo.queryDeviceSensors_Direct(device.serial);
             if(this.config.simpleDuctless) {
-              new KumoPlatformAccessory_ductless_simple(this, accessory, hasSensors);
+              new KumoPlatformAccessory_ductless_simple(this, accessory);
             } else {
-              new KumoPlatformAccessory_ductless(this, accessory, hasSensors);
+              new KumoPlatformAccessory_ductless(this, accessory);
             }
           } else {         
             this.log.info('%s: Using platformaAccessory.ts accessory.', accessory.displayName);
