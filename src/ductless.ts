@@ -35,7 +35,7 @@ export class KumoPlatformAccessory_ductless {
     private readonly accessory: PlatformAccessory,
   ) {
     this.directAccess = this.platform.config.directAccess;
-    this.useExternalSensor = this.accessory.context.device.activeThermistor !== undefined && this.accessory.context.device.activeThermistor !== "unset"
+    this.useExternalSensor = this.directAccess && this.accessory.context.device.activeThermistor !== undefined && this.accessory.context.device.activeThermistor !== "unset"
     if (this.useExternalSensor) {
       this.platform.log.info('device %s uses external sensor %s', this.accessory.context.serial, this.accessory.context.device.activeThermistor)
     }
