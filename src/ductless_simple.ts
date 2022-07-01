@@ -17,6 +17,7 @@ import { KUMO_LAG, KUMO_DEVICE_WAIT } from './settings';
 export class KumoPlatformAccessory_ductless_simple {
   private HeaterCooler: Service;
   private Humidity: Service | null;
+  private HumidityBattery: Service | null;
 
   private lastupdate;
   private lastquery;
@@ -61,11 +62,19 @@ export class KumoPlatformAccessory_ductless_simple {
     this.Humidity = useExternalSensor ? this.accessory.getService(
       this.platform.Service.HumiditySensor) || this.accessory.addService(this.platform.Service.HumiditySensor) : null;
 
+    this.HumidityBattery = useExternalSensor ? this.accessory.getService(
+      this.platform.Service.Battery) || this.accessory.addService(this.platform.Service.Battery) : null;
+
     // set sevice names.
     this.HeaterCooler.setCharacteristic(this.platform.Characteristic.Name, 'Heater/Cooler');
 
     if (this.Humidity) {
       this.Humidity.setCharacteristic(this.platform.Characteristic.Name, 'Humidity Sensor');
+    }
+
+    if (this.HumidityBattery) {
+      this.HumidityBattery.setCharacteristic(this.platform.Characteristic.Name, 'Humidity Sensor Battery');
+      this.HumidityBattery.setCharacteristic(this.platform.Characteristic.ChargingState, this.platform.Characteristic.ChargingState.NOT_CHARGEABLE);
     }
 
     // create handlers for characteristics
@@ -359,7 +368,7 @@ export class KumoPlatformAccessory_ductless_simple {
   }
 
   private updateCurrentRelativeHumidity() {
-    if (!this.Humidity) {
+    if (!this.Humidity || !this.HumidityBattery) {
       return;
     }
     let currentValue: number = <number>this.Humidity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity).value;
@@ -373,10 +382,13 @@ export class KumoPlatformAccessory_ductless_simple {
           this.platform.log.warn('!!!The sensor attached to device %s has a low battery!!!', this.accessory.context.serial)
 
           this.Humidity.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW);
+          this.HumidityBattery.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW);
         } else {
           this.Humidity.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+          this.HumidityBattery.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
         }
 
+        this.HumidityBattery.updateCharacteristic(this.platform.Characteristic.BatteryLevel, ourSensor.battery);
       }
     }
     this.Humidity.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, currentValue);
