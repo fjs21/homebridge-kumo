@@ -203,7 +203,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
           if(this.config.simpleDuctless) {
             new KumoPlatformAccessory_ductless_simple(this, accessory);
           } else {
-            new KumoPlatformAccessory_ductless(this, accessory);  
+            new KumoPlatformAccessory_ductless(this, accessory);
           }
         } else {
           this.log.info('Initializing "%s" of unitType "%s" as generic (unspecified) unit.', 

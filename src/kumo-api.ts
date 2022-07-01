@@ -63,6 +63,13 @@ interface KumoDeviceDirectInterface {
   vaneDir: string,
 }
 
+interface KumoSensorData {
+  battery: number;
+  humidity: number;
+  temperature: number;
+  uuid: string;
+}
+
 export type KumoDeviceDirect = Readonly<KumoDeviceDirectInterface>;
 
 // Renew Kumo security credentials every so often, in hours.
@@ -354,7 +361,7 @@ export class KumoApi {
     return true;
   }
 
-  // querying sensors (not implemented as not available to test)
+  // querying sensors
   async queryDeviceSensors_Direct(serial: string) {
     const data = await this.directRequest('{"c":{"sensors":{}}}', serial);
     if(!data){
@@ -362,14 +369,13 @@ export class KumoApi {
     }  
     this.log.debug(util.inspect(data, { colors: true, sorted: true, depth: 3 }));
 
-    const deviceSensors = [] as any;
+    const deviceSensors = [] as KumoSensorData[];
     try {
       const sensors = data.r.sensors;
       for(const sensor in sensors) {
         if(sensors[sensor].uuid !== null && sensors[sensor].uuid !== undefined) {
           this.log.debug('Found sensor.uuid: %s', sensors[sensor].uuid);
-          const uuid:string = sensors[sensor].uuid;
-          deviceSensors.push(uuid);
+          deviceSensors.push(<KumoSensorData>sensors[sensor]);
         }
       }
 
