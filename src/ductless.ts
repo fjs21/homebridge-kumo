@@ -20,7 +20,7 @@ export class KumoPlatformAccessory_ductless {
   private Fan: Service;
   private PowerSwitch: Service;
   private Dehumidifier: Service;
-  private Humdity: Service | null;
+  private Humidity: Service | null;
 
   private lastupdate;
   private lastquery;
@@ -35,9 +35,14 @@ export class KumoPlatformAccessory_ductless {
   ) {
     this.directAccess = this.platform.config.directAccess;
 
-    const useExternalSensor = this.directAccess && this.accessory.context.device.activeThermistor !== undefined && this.accessory.context.device.activeThermistor !== "unset"
+    const useExternalSensor = this.directAccess &&
+      this.accessory.context.device.activeThermistor !== undefined &&
+      this.accessory.context.device.activeThermistor !== 'unset';
+
     if (useExternalSensor) {
-      this.platform.log.info('device %s uses external sensor %s', this.accessory.context.serial, this.accessory.context.device.activeThermistor)
+      this.platform.log.info('device %s uses external sensor %s',
+        this.accessory.context.serial,
+        this.accessory.context.device.activeThermistor);
     }
 
     // determine device profile and additional sensors to tailor accessory to
@@ -85,11 +90,11 @@ export class KumoPlatformAccessory_ductless {
     this.Fan.setCharacteristic(this.platform.Characteristic.Name, 'Fan');
     this.PowerSwitch.setCharacteristic(this.platform.Characteristic.Name, 'Power');
 
-    this.Humdity = useExternalSensor ? this.accessory.getService(
+    this.Humidity = useExternalSensor ? this.accessory.getService(
       this.platform.Service.HumiditySensor) || this.accessory.addService(this.platform.Service.HumiditySensor) : null;
 
-    if (this.Humdity) {
-      this.Humdity.setCharacteristic(this.platform.Characteristic.Name, 'Humidity Sensor');
+    if (this.Humidity) {
+      this.Humidity.setCharacteristic(this.platform.Characteristic.Name, 'Humidity Sensor');
     }
 
     // create handlers for characteristics
@@ -160,8 +165,8 @@ export class KumoPlatformAccessory_ductless {
     //   .on('get', this.handleDehumidiferActiveGet.bind(this))
     //   .on('set', this.handleDehumidiferActiveSet.bind(this));
 
-    if (this.Humdity) {
-      this.Humdity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
+    if (this.Humidity) {
+      this.Humidity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
         .on('get', this.handleHumidityGet.bind(this));
     }
 
@@ -258,11 +263,11 @@ export class KumoPlatformAccessory_ductless {
   }
 
   async handleHumidityGet(callback) {
-    if (!this.Humdity) {
+    if (!this.Humidity) {
       return;
     }
     await this.updateAccessoryCharacteristics();
-    callback(null, this.Humdity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity).value);
+    callback(null, this.Humidity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity).value);
   }
 
   async updateAccessoryCharacteristics() {
@@ -334,7 +339,7 @@ export class KumoPlatformAccessory_ductless {
       }
       this.platform.log.debug('%s (queryDevice_Direct): success.', this.accessory.displayName);
 
-      if (this.Humdity) {
+      if (this.Humidity) {
         this.platform.log.debug('querying external sensors on %s', this.accessory.context.serial);
         const sensorData = await this.platform.kumo.queryDeviceSensors_Direct(this.accessory.context.serial);
         if (sensorData) {
@@ -349,23 +354,23 @@ export class KumoPlatformAccessory_ductless {
   }
 
   private updateCurrentRelativeHumidity() {
-    if (!this.Humdity) {
+    if (!this.Humidity) {
       return;
     }
-    let currentValue: number = <number>this.Humdity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity).value;
+    let currentValue: number = <number>this.Humidity.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity).value;
     if (this.accessory.context.sensors && this.accessory.context.sensors.length) {
       const ourSensor = this.accessory.context.sensors[0];
       currentValue = ourSensor.humidity;
       this.platform.log.debug('setting humidity to %s', currentValue);
 
       if (ourSensor.battery) {
-        this.Humdity.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, ourSensor.battery < 10);
+        this.Humidity.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, ourSensor.battery < 10);
         if (ourSensor.battery < 10) {
           this.platform.log.warn('!!!The sensor attached to device %s has a low battery!!!', this.accessory.context.serial)
         }
       }
     }
-    this.Humdity.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, currentValue);
+    this.Humidity.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, currentValue);
   }
 
   private updateHeaterCoolerActive() {
