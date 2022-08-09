@@ -300,9 +300,13 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     // We've explicitly set an address for this device.
-    if(this.config.options.indexOf('address.' + (device.serial)) !== -1) {
-      return this.config.options['address.' + (device.serial)];
+    for (const configOption of this.config.options) {
+        if(!configOption.startsWith('address.' + (device.serial) + '=')) {
+            continue;
+        }
+        return configOption.split('=')[1];
     }
+      
 
     // If we don't have a zoneTable label, we're done here.
     if(!device.label) {
@@ -310,8 +314,11 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     // We've explicitly set an address for the zoneTable label this device is attached to.
-    if(this.config.options.indexOf('address.' + device.label) !== -1) {
-      return this.config.options['address.' + (device.label)];
+    for (const configOption of this.config.options) {
+        if(!configOption.startsWith('address.' + (device.label) + '=')) {
+            continue;
+        }
+        return configOption.split('=')[1];
     }
 
     // Nothing special to do - return default.
