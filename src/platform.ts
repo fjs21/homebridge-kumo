@@ -105,13 +105,17 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
         existingAccessory.context.zoneTable = device.zoneTable;
+        const overrideAddress = this.optionGetOverrideAddress(device, existingAccessory.context.zoneTable.address);
+        if (overrideAddress != null) {
+        existingAccessory.context.zoneTable.address = overrideAddress;
+        }
         
         this.log.debug(device.zoneTable);
 
         if (this.config.directAccess) {
           existingAccessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
           if(existingAccessory.context.device === null) {
-            this.log.error('Failed to connect to device IP (%s)', device.serial);
+            this.log.error('Failed to connect to device IP (%s) at %s', device.serial, );
             existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
             this.config.directAccess = false;
             this.log.info('Disabling directAccess to Kumo devices');
@@ -283,6 +287,34 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     // Nothing special to do - make this opener visible.
+    return defaultReturnValue;
+  }
+    
+  // Utility function to let us know if we should use a different IP Address to communicate with a KUMO device.
+  private optionGetOverrideAddress(device, defaultReturnValue = null): string|null {
+
+
+    // Nothing configured - we show all Kumo devices to HomeKit.
+    if(!this.config.options) {
+      return defaultReturnValue;
+    }
+
+    // We've explicitly set an address for this device.
+    if(this.config.options.indexOf('address.' + (device.serial)) !== -1) {
+      return this.config.options['address.' + (device.serial)];
+    }
+
+    // If we don't have a zoneTable label, we're done here.
+    if(!device.label) {
+      return defaultReturnValue;
+    }
+
+    // We've explicitly set an address for the zoneTable label this device is attached to.
+    if(this.config.options.indexOf('address.' + device.label) !== -1) {
+      return this.config.options['address.' + (device.label)];
+    }
+
+    // Nothing special to do - return default.
     return defaultReturnValue;
   }
 
