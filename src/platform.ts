@@ -107,7 +107,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         existingAccessory.context.zoneTable = device.zoneTable;
         const overrideAddress = this.optionGetOverrideAddress(device, existingAccessory.context.zoneTable.address);
         if (overrideAddress != null) {
-        existingAccessory.context.zoneTable.address = overrideAddress;
+          existingAccessory.context.zoneTable.address = overrideAddress;
         }
         
         this.log.debug(device.zoneTable);
@@ -115,7 +115,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         if (this.config.directAccess) {
           existingAccessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
           if(existingAccessory.context.device === null) {
-            this.log.error('Failed to connect to device IP (%s) at %s', device.serial, );
+            this.log.error('Failed to connect to device IP (%s) at %s', device.serial, existingAccessory.context.zoneTable.address);
             existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
             this.config.directAccess = false;
             this.log.info('Disabling directAccess to Kumo devices');
