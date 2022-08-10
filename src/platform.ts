@@ -301,7 +301,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
     // We've explicitly set an address for this device.
     for (const configOption of this.config.options) {
-        if(!configOption.startsWith('address.' + (device.serial) + '=') && !configOption.startsWith('Address.' + (device.serial) + '=')) {
+        if(!configOption.startsWith('Address.' + (device.serial) + '=')) {
             continue;
         }
         return configOption.split('=')[1];
@@ -315,7 +315,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
     // We've explicitly set an address for the zoneTable label this device is attached to.
     for (const configOption of this.config.options) {
-        if(!configOption.startsWith('address.' + (device.label) + '=') && !configOption.startsWith('Address.' + (device.label) + '=')) {
+        if(!configOption.startsWith('Address.' + (device.label) + '=')) {
             continue;
         }
         return configOption.split('=')[1];
