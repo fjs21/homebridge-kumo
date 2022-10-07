@@ -8,6 +8,8 @@ import { KumoHomebridgePlatform } from './platform';
 
 import { KUMO_LAG, KUMO_DEVICE_WAIT } from './settings';
 
+import { FanState, fanStateMap, fanPercentStep } from './fanState';
+
 /*
  * Platform Accessory - Kumo 'ductless' accessory tested with a
  * Mitsubishi split-system heat pump (minisplit) Model MSZ-FH12NA coupled with a PAC-USWHS002-WF-2 WiFi module
@@ -18,7 +20,6 @@ export class KumoPlatformAccessory_ductless {
   //private service: Service;
   private HeaterCooler: Service;
   private Fan: Service;
-  private PowerSwitch: Service;
   private Dehumidifier: Service;
   private Humidity: Service | null;
   private HumidityBattery: Service | null;
@@ -78,8 +79,6 @@ export class KumoPlatformAccessory_ductless {
     this.HeaterCooler = this.accessory.getService(
       this.platform.Service.HeaterCooler) || this.accessory.addService(this.platform.Service.HeaterCooler);
     this.Fan = this.accessory.getService(this.platform.Service.Fanv2) || this.accessory.addService(this.platform.Service.Fanv2);
-    this.PowerSwitch = this.accessory.getService('Power') ||
-      this.accessory.addService(this.platform.Service.Switch, 'Power', 'Power');
 
     /* Implement dehumidifer as seperate switch as minisplit does not have humidity measuerment */
     this.Dehumidifier = this.accessory.getService('Dehumidifier') || 
@@ -90,7 +89,6 @@ export class KumoPlatformAccessory_ductless {
     // set sevice names.
     this.HeaterCooler.setCharacteristic(this.platform.Characteristic.Name, 'Heater/Cooler');
     this.Fan.setCharacteristic(this.platform.Characteristic.Name, 'Fan');
-    this.PowerSwitch.setCharacteristic(this.platform.Characteristic.Name, 'Power');
 
     this.Humidity = useExternalSensor ? this.accessory.getService(
       this.platform.Service.HumiditySensor) || this.accessory.addService(this.platform.Service.HumiditySensor) : null;
@@ -131,6 +129,7 @@ export class KumoPlatformAccessory_ductless {
       .on('get', this.handleCurrentTemperatureGet.bind(this));   
   
     this.HeaterCooler.getCharacteristic(this.platform.Characteristic.RotationSpeed)
+      .setProps({ minStep: fanPercentStep })
       // .on('get', this.handleFanRotationSpeedGet.bind(this))
       .on('set', this.handleFanRotationSpeedSet.bind(this));
 
@@ -140,6 +139,7 @@ export class KumoPlatformAccessory_ductless {
 
     /* Device - Fan */
     this.Fan.getCharacteristic(this.platform.Characteristic.RotationSpeed)
+      .setProps({ minStep: fanPercentStep })
       .on('get', this.handleFanRotationSpeedGet.bind(this))
       .on('set', this.handleFanRotationSpeedSet.bind(this));
 
@@ -151,11 +151,6 @@ export class KumoPlatformAccessory_ductless {
       .on('get', this.handleFanActiveGet.bind(this))
       .on('set', this.handleFanActiveSet.bind(this));
 
-    /* Device - Power */
-    this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On)
-      .on('get', this.handlePowerSwitchOnGet.bind(this))
-      .on('set', this.handlePowerSwitchOnSet.bind(this));
-  
     /* Device - Dehumidifer */
     this.Dehumidifier.getCharacteristic(this.platform.Characteristic.On)
       .on('get', this.handleDehumidifierSwitchGet.bind(this))
@@ -262,11 +257,6 @@ export class KumoPlatformAccessory_ductless {
     callback(null, this.Fan.getCharacteristic(this.platform.Characteristic.SwingMode).value);
   }
 
-  async handlePowerSwitchOnGet(callback) {
-    await this.updateAccessoryCharacteristics();
-    callback(null, this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On).value);
-  }
-
   async handleDehumidifierSwitchGet(callback) {
     await this.updateAccessoryCharacteristics();
     callback(null, this.Dehumidifier.getCharacteristic(this.platform.Characteristic.On).value);
@@ -298,7 +288,6 @@ export class KumoPlatformAccessory_ductless {
     this.updateFanActive();
     this.updateFanRotationSpeed();
     this.updateFanSwingMode();
-    this.updatePowerSwitchOn();
     this.updateDehumidifierSwitchOn();
     this.updateCurrentRelativeHumidity();
 
@@ -375,7 +364,7 @@ export class KumoPlatformAccessory_ductless {
 
       if (ourSensor.battery) {
         if (ourSensor.battery < 10) {
-          this.platform.log.warn('!!!The sensor attached to device %s has a low battery!!!', this.accessory.context.serial)
+          this.platform.log.warn('!!!The sensor attached to device %s has a low battery!!!', this.accessory.context.serial);
 
           this.Humidity.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW);
           this.HumidityBattery.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW);
@@ -505,7 +494,7 @@ export class KumoPlatformAccessory_ductless {
     const mode: string = this.accessory.context.device.mode;
     const fanAuto: boolean = this.accessory.context.device.fanSpeed === 'auto';
 
-    let currentValue: number = <number>this.Fan.getCharacteristic(this.platform.Characteristic.Active).value;
+    let currentValue: number;
     if(
       (fan_speed > 0 && power === 1 && !this.directAccess) ||
       (!fanAuto && mode !== 'off' && this.directAccess)
@@ -522,23 +511,10 @@ export class KumoPlatformAccessory_ductless {
     const fan_speed: number = this.accessory.context.device.fan_speed; 
     const fanSpeed: string = this.accessory.context.device.fanSpeed;
 
-    let currentValue: number = <number>this.HeaterCooler.getCharacteristic(this.platform.Characteristic.RotationSpeed).value;
-    // fanSpeed decoder ring.
-    const fanStateMap: {[index: string]: number} = {
-      auto: 0,
-      superQuiet: 1,
-      quiet: 2,
-      low: 3,
-      powerful: 5,
-      superPowerful: 6,
-    };
-    if (!this.directAccess) {
-      currentValue = (fan_speed) * 100/6;
-    } else {
-      currentValue = (fanStateMap[fanSpeed]) * 100/6;  
-    }
-    this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
-    this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentValue);
+    const currentFanState = fanStateMap[this.directAccess ? fanSpeed : fan_speed] ?? fanStateMap[0];
+
+    this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentFanState.percent);
+    this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, currentFanState.percent);
   }
   
   private updateFanSwingMode() {  
@@ -555,20 +531,6 @@ export class KumoPlatformAccessory_ductless {
     }
     this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
     this.Fan.updateCharacteristic(this.platform.Characteristic.SwingMode, currentValue);
-  }
-  
-  private updatePowerSwitchOn() {
-    // PowerSwitchOn
-    const power: number = this.accessory.context.device.power;
-    const mode: string = this.accessory.context.device.mode;
-
-    let currentValue: boolean = <boolean>this.PowerSwitch.getCharacteristic(this.platform.Characteristic.On).value;
-    if (power === 0 || mode === 'off') {
-      currentValue = false;
-    } else {
-      currentValue = true;
-    }
-    this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.On, currentValue);
   }
   
   private updateDehumidifierSwitchOn() {
@@ -588,15 +550,30 @@ export class KumoPlatformAccessory_ductless {
   // handlers SET
 
   // Handle requests to set the "Active" characteristic
-  handleActiveSet(value, callback) {
+  async handleActiveSet(value, callback) {
+    // check power status
+    if (!(await this.updateDevice())) {
+      callback(null);
+      return;
+    }
+
     const value_old: number = <number>this.HeaterCooler.getCharacteristic(this.platform.Characteristic.Active).value;
 
     let command: Record<string, unknown> | undefined;
     let commandDirect: Record<string, unknown> | undefined;
     if(value === 0 && value_old === 1) {
-      // turn ON fan mode
-      command = {'operationMode':7};
-      commandDirect = {'mode':'vent'};
+      const fanSpeed: number = <number>this.HeaterCooler.getCharacteristic(
+        this.platform.Characteristic.RotationSpeed).value;
+      if (fanSpeed) {
+        // The fan is currently at a set speed (not auto). Set mode to vent.
+        command = {'operationMode':7};
+        commandDirect = {'mode':'vent'};
+      } else {
+        // The fan state is currently auto. Power off.
+        command = {'power':0, 'operationMode':16};
+        commandDirect = {'mode':'off'};
+      }
+      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
     } else if(value === 1 && value_old === 0) {
       // use existing TargetHeaterCoolerState
       const value: number = <number>this.HeaterCooler.getCharacteristic(
@@ -615,13 +592,14 @@ export class KumoPlatformAccessory_ductless {
         command = {'power':1, 'operationMode':8};
         commandDirect = {'mode': 'auto'};
       }
+      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 1);
     }
 
     if(command !== undefined || commandDirect !== undefined) {
       if(command !== undefined && !this.directAccess) {
-        this.platform.kumo.execute(this.accessory.context.serial, command);
+        await this.platform.kumo.execute(this.accessory.context.serial, command);
       } else if (commandDirect !== undefined && this.directAccess) {
-        this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+        await this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
       this.lastupdate = Date.now();
       this.platform.log.info('%s (Heater/Cooler): set Active from %s to %s', this.accessory.displayName, value_old, value);  
@@ -652,7 +630,6 @@ export class KumoPlatformAccessory_ductless {
     }
 
     if(command !== undefined || commandDirect !== undefined) {
-      this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.Active, 1);
       if(command !== undefined && !this.directAccess) {
         this.platform.kumo.execute(this.accessory.context.serial, command);
       } else if (commandDirect !== undefined && this.directAccess) {
@@ -715,37 +692,62 @@ export class KumoPlatformAccessory_ductless {
   }  
 
   async handleFanActiveSet(value, callback) {
+    // check power status
+    if (!(await this.updateDevice())) {
+      callback(null);
+      return;
+    }
+
     // logic to set active on fan 
     let command: Record<string, unknown> | undefined;
-    let commandDirect: Record<string, unknown> | undefined;   
+    let commandDirect: Record<string, unknown> | undefined;
+
+    let newFanState : FanState | null = null;
     if(value === 0) {
-      // fan to auto
-      command = {'fanSpeed':0};
-      commandDirect = {'fanSpeed':'auto'};
+      newFanState = fanStateMap[0];
+      if (
+        (this.accessory.context.device.power === 1 && this.accessory.context.device.operation_mode === 7) ||
+        this.accessory.context.device.mode === 'vent'
+      ) {
+        // Current mode is vent (fan), so set mode to off.
+        command = {'power':0, 'operationMode':16};
+        commandDirect = {'mode':'off'};
+        newFanState = fanStateMap[0];
+      } else if (
+        (this.accessory.context.device.power === 1 && this.accessory.context.device.operation_mode !== 7) ||
+        (this.accessory.context.device.mode !== 'off' && this.accessory.context.device.mode !== 'vent')
+      ) {
+        // Some other mode is active, so just set fan to auto.
+        command = {'fanSpeed':0};
+        commandDirect = {'fanSpeed':'auto'};
+      }
     } else if(value === 1) {    
-      // check power status
-      if(await this.updateDevice()) {
-        if(
-          (this.accessory.context.device.power === 1 && this.accessory.context.device.fan_speed === 0) ||
+      // If the fan is currently at a set speed, possibly because the speed was *just* updated by
+      // handleFanRotationSpeedSet(), then turn on to that speed. Otherwise turn on to max speed.
+      const currentFanSpeed = <number>this.HeaterCooler.getCharacteristic(
+        this.platform.Characteristic.RotationSpeed).value;
+      newFanState = currentFanSpeed ? fanStateMap[currentFanSpeed] : fanStateMap[100];
+
+      if(
+        (this.accessory.context.device.power === 1 && this.accessory.context.device.fan_speed === 0) ||
           (this.accessory.context.device.mode !== 'off' && this.accessory.context.device.fanSpeed === 'auto')
-        ) {
-          // if power ON and fan speed = AUTO,set fan speed from auto to superQuiet:1
-          command = {'fanSpeed':1}; 
-          commandDirect = {'fanSpeed':'superQuiet'}; 
-          this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-          this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-        } else if (this.accessory.context.device.power === 0 || this.accessory.context.device.mode === 'off' ) {
-          // if power OFF, set power to on, operationMode to 7 (vent) and fanSpeed to superQuiet:1
-          command = {'power':1, 'operationMode':7, 'fanSpeed':1};
-          commandDirect = {'mode':'vent', 'fanSpeed':'superQuiet'};
-          // this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.On, 1);
-          this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-          this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-        }
+      ) {
+        // if power ON and fan speed = AUTO, set fan speed to maximum
+        command = {'fanSpeed':newFanState.value}; 
+        commandDirect = {'fanSpeed':newFanState.name}; 
+      } else if (this.accessory.context.device.power === 0 || this.accessory.context.device.mode === 'off' ) {
+        // if power OFF, set power to on, operationMode to 7 (vent) and fan speed to maximum
+        command = {'power':1, 'operationMode':7, 'fanSpeed':newFanState.value};
+        commandDirect = {'mode':'vent', 'fanSpeed':newFanState.name};
       }
     }
+
     // only issue a command if not null
-    if(command !== undefined || commandDirect !== undefined) {
+    if(newFanState) {
+      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, newFanState.percent);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, newFanState.percent);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.Active, newFanState.percent ? 1 : 0);
+
       if(command !== undefined && !this.directAccess) {
         this.platform.kumo.execute(this.accessory.context.serial, command);
       } else if (commandDirect !== undefined && this.directAccess) {
@@ -757,38 +759,30 @@ export class KumoPlatformAccessory_ductless {
     callback(null);
   }
 
-  handleFanRotationSpeedSet(value, callback) {
+  async handleFanRotationSpeedSet(value, callback) {
     const value_old: number = <number>this.HeaterCooler.getCharacteristic(this.platform.Characteristic.RotationSpeed).value;
 
-    const speed_old: number = Math.floor(value_old / (100/6));
-    const speed: number = Math.floor(value / (100/6));
+    // Ensure the speed value (percent) is a multiple of the step.
+    value = Math.floor(value / fanPercentStep) * fanPercentStep;
 
-    // only send command if fan_speed has changed
-    if(speed !== speed_old) {
+    // only send command if value has changed
+    if(value !== value_old) {
+      const newFanState = fanStateMap[value] ?? fanStateMap[0];
+
       // send comand to update fanSpeed    
-      const command: Record<string, number> = {'fanSpeed':speed};
+      const command: Record<string, number> = {'fanSpeed':newFanState.value};
+      const commandDirect: Record<string, string> = {'fanSpeed':newFanState.name};
 
-      // fanSpeed decoder ring.
-      const fanStateMap: {[index: number]: string} = {
-        0: 'auto',
-        1: 'superQuiet',
-        2: 'quiet',
-        3: 'low',
-        5: 'powerful',
-        6: 'superPowerful',
-      };
-
-      const commandDirect: Record<string, string> = {'fanSpeed':fanStateMap[speed]};
-      this.platform.log.info('commandDirect: %s.', commandDirect);
+      // Update characteristics before sending the command, to win the race with handleFanActiveSet().
+      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, value);
+      this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, value);
+      this.platform.log.info('%s (Fan): set RotationSpeed from %s to %s.', this.accessory.displayName, value_old, value);
 
       if(!this.directAccess) {
-        this.platform.kumo.execute(this.accessory.context.serial, command);
+        await this.platform.kumo.execute(this.accessory.context.serial, command);
       } else {
-        this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
+        await this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
       }
-      this.platform.log.info('%s (Fan): set RotationSpeed from %s to %s.', this.accessory.displayName, speed_old, speed);
-      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, Math.floor(speed * 100/6));
-      this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, Math.floor(speed * 100/6));
     }
     this.lastupdate = Date.now();
     callback(null);
@@ -816,35 +810,6 @@ export class KumoPlatformAccessory_ductless {
     callback(null);
   }
 
-  handlePowerSwitchOnSet(value, callback) {
-    let command: Record<string, unknown> | undefined;
-    let commandDirect: Record<string, unknown> | undefined;
-    if(!value) {
-      command = {'power':0, 'operationMode':16};
-      commandDirect = {'mode':'off'};
-      // turn off other services to refect power off
-      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
-      this.Fan.updateCharacteristic(this.platform.Characteristic.Active, 0);
-      this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-    } else {
-      // turn on Fan with auto fanSpeed and airDirection
-      command = {'power':1, 'operationMode':7, 'fanSpeed':0};
-      commandDirect = {'mode':'vent', 'fanSpeed':'superQuiet'}; 
-      this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
-      this.Fan.updateCharacteristic(this.platform.Characteristic.Active, 1);
-      this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-    }
-  
-    if(!this.directAccess) {
-      this.platform.kumo.execute(this.accessory.context.serial, command);
-    } else {
-      this.platform.kumo.execute_Direct(this.accessory.context.serial, commandDirect);
-    }
-    this.lastupdate = Date.now();
-    this.platform.log.info('%s (PowerSwitch): set Active to %s.', this.accessory.displayName, value);  
-    callback(null);
-  }
-
   handleDehumidifierSwitchSet(value, callback) {
     let command: Record<string, unknown> | undefined;
     let commandDirect: Record<string, unknown> | undefined;
@@ -852,10 +817,9 @@ export class KumoPlatformAccessory_ductless {
     if(!value) {
       command = {'power':0, 'operationMode':16};
       commandDirect = {'mode':'off'};
-      // turn off Dehumidifier - set HeaterCooler to OFF, fan to OFF, PowerSwitch to OFF
+      // turn off Dehumidifier - set HeaterCooler to OFF, fan to OFF
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
       this.Fan.updateCharacteristic(this.platform.Characteristic.Active, 0);
-      this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.On, 0);
       
     } else {
       // turn on Dehumidifer - set HeaterCooler to OFF, fan to AUTO, vane to SWING_DISABLED
@@ -864,7 +828,6 @@ export class KumoPlatformAccessory_ductless {
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.Active, 0);
       this.HeaterCooler.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
       this.Fan.updateCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
-      this.PowerSwitch.updateCharacteristic(this.platform.Characteristic.On, 1);
     }
   
     if(!this.directAccess) {
