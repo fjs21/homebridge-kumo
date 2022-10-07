@@ -105,13 +105,18 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
         existingAccessory.context.zoneTable = device.zoneTable;
+        const overrideAddress = this.optionGetOverrideAddress(device, existingAccessory.context.zoneTable.address);
+        if (overrideAddress != null) {
+          this.log.info('Override address found for device - using IP %s instead of %s for direct access', overrideAddress, existingAccessory.context.zoneTable.address);
+          existingAccessory.context.zoneTable.address = overrideAddress;
+        }
         
         this.log.debug(device.zoneTable);
 
         if (this.config.directAccess) {
           existingAccessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
           if(existingAccessory.context.device === null) {
-            this.log.error('Failed to connect to device IP (%s)', device.serial);
+            this.log.error('Failed to connect to device IP (%s) at %s', device.serial, existingAccessory.context.zoneTable.address);
             existingAccessory.context.device = await this.kumo.queryDevice(device.serial);
             this.config.directAccess = false;
             this.log.info('Disabling directAccess to Kumo devices');
@@ -177,13 +182,18 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         // the `context` property can be used to store any data about the accessory you may need
         accessory.context.serial = device.serial;
         accessory.context.zoneTable = device.zoneTable;
+        const overrideAddress = this.optionGetOverrideAddress(device, accessory.context.zoneTable.address);
+        if (overrideAddress != null) {
+          this.log.info('Override address found for device - using IP %s instead of %s for direct access', overrideAddress, accessory.context.zoneTable.address);
+          accessory.context.zoneTable.address = overrideAddress;
+        }
         
         this.log.debug(device.zoneTable);
 
         if (this.config.directAccess) {
           accessory.context.device = await this.kumo.queryDevice_Direct(device.serial);
           if(accessory.context.device === null) {
-            this.log.error('Failed to connect to device IP (%s)', device.serial);
+            this.log.error('Failed to connect to device IP (%s) at %s', device.serial, accessory.context.zoneTable.address);
             this.config.directAccess = false;
             this.log.info('Disabling directAccess to Kumo devices');
             accessory.context.device = await this.kumo.queryDevice(device.serial);
@@ -283,6 +293,41 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     // Nothing special to do - make this opener visible.
+    return defaultReturnValue;
+  }
+    
+  // Utility function to let us know if we should use a different IP Address to communicate with a KUMO device.
+  private optionGetOverrideAddress(device, defaultReturnValue = null): string|null {
+
+
+    // Nothing configured - we show all Kumo devices to HomeKit.
+    if(!this.config.options) {
+      return defaultReturnValue;
+    }
+
+    // We've explicitly set an address for this device.
+    for (const configOption of this.config.options) {
+        if(!configOption.startsWith('Address.' + (device.serial) + '=')) {
+            continue;
+        }
+        return configOption.split('=')[1];
+    }
+      
+
+    // If we don't have a zoneTable label, we're done here.
+    if(!device.label) {
+      return defaultReturnValue;
+    }
+
+    // We've explicitly set an address for the zoneTable label this device is attached to.
+    for (const configOption of this.config.options) {
+        if(!configOption.startsWith('Address.' + (device.label) + '=')) {
+            continue;
+        }
+        return configOption.split('=')[1];
+    }
+
+    // Nothing special to do - return default.
     return defaultReturnValue;
   }
 

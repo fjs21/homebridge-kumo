@@ -59,9 +59,16 @@ If you choose to configure this plugin directly instead of using the [Homebridge
 
 For most people, I recommend using [Homebridge Configuration web UI](https://github.com/oznu/homebridge-config-ui-x) to configure this plugin rather than doing so directly. It's easier to use for most users, especially newer users, and less prone to typos, leading to other problems.
 
+### Feature Options
+Special options are available by adding Feature Options, easily managable from the Plugin's settings via [Homebridge Configuration web UI](https://github.com/oznu/homebridge-config-ui-x). Only one option should be defined per Feature Option entry. The following options are available to be used: 
+
+- `Disable.[SerialNumber/ZoneName]`: Hide a specific device from being exposed in Homebridge. The device can be referenced by serial or zone name, both of which are printed out into the log when the plugin starts.
+- `Enable.[SerialNumber/ZoneName]`: Show a specific device from being exposed in Homebridge. The device can be referenced by serial or zone name, both of which are printed out into the log when the plugin starts.
+- `Address.[SerialNumber/ZoneName]=[IpAddress]`: Use a specific IP Address to connect to a given device (only applicable when Direct Access is enabled). The device can be referenced by serial or zone name, both of which are printed out into the log when the plugin starts.
+
 ### Troubleshooting
 
-1. Issue #45 (and others). If using directAccess, please ensure that the IP address assigned to your Kumo devices is static. The IP address is retrieved from the Kumo cloud at plugin startup and can become out of sync if the Wifi router reboots and assigns a new IP address. Until the Kumo cloud updates (which is unclear when this happens), the plugin will fail to connect.
+1. Issue #45 (and others). If using directAccess, please ensure that the IP address assigned to your Kumo devices is static. The IP address is retrieved from the Kumo cloud at plugin startup and can become out of sync if the Wifi router reboots and assigns a new IP address. Until the Kumo cloud updates (which is unclear when this happens), the plugin will fail to connect. If Kumo cloud seems to persistently have an incorrect IP Address, you may specify the IP Address the plugin should use to communicate with devices manually via the `Address.[SerialNumber/ZoneName]=[IpAddress]` feature option.
 
 2. Issue #42. There have been reports of time out errors occuring when using other plugins specifically homebridge-wemo. If you encounter a time out error, please move homebridge-kumo to a seperate bridge.
 
