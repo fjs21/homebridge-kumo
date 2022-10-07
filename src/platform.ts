@@ -105,8 +105,8 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
         existingAccessory.context.zoneTable = device.zoneTable;
-        const overrideAddress = this.optionGetOverrideAddress(device, existingAccessory.context.zoneTable.address);
-        if (overrideAddress != null) {
+        const overrideAddress = this.optionGetOverrideAddress(device);
+        if (overrideAddress !== null) {
           this.log.info('Override address found for device - using IP %s instead of %s for direct access', overrideAddress, existingAccessory.context.zoneTable.address);
           existingAccessory.context.zoneTable.address = overrideAddress;
         }
@@ -183,7 +183,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
         accessory.context.serial = device.serial;
         accessory.context.zoneTable = device.zoneTable;
         const overrideAddress = this.optionGetOverrideAddress(device);
-        if (overrideAddress != null) {
+        if (overrideAddress !== null) {
           this.log.info('Override address found for device - using IP %s instead of %s for direct access', overrideAddress, accessory.context.zoneTable.address);
           accessory.context.zoneTable.address = overrideAddress;
         }
