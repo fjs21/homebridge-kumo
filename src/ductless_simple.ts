@@ -510,6 +510,13 @@ export class KumoPlatformAccessory_ductless_simple {
 
   handleTargetHeaterCoolingThresholdTemperatureSet(value, callback) {
     const minCoolSetpoint: number = this.accessory.context.zoneTable.minCoolSetpoint;
+
+    if (this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState).value ===
+        this.platform.Characteristic.CurrentHeaterCoolerState.HEATING) {
+       this.platform.log.info('%s (Heater/Cooler): in heat mode but cooling threshold change requested; overriding', this.accessory.displayName);
+       this.handleTargetHeaterHeatingThresholdTemperatureSet(value, callback);
+       return;
+    }
     
     if(value<minCoolSetpoint) {
       value = minCoolSetpoint;
@@ -535,6 +542,13 @@ export class KumoPlatformAccessory_ductless_simple {
 
   handleTargetHeaterHeatingThresholdTemperatureSet(value, callback) {
     const maxHeatSetpoint: number = this.accessory.context.zoneTable.maxHeatSetpoint;
+
+    if (this.HeaterCooler.getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState).value ===
+        this.platform.Characteristic.CurrentHeaterCoolerState.COOLING) {
+       this.platform.log.info('%s (Heater/Cooler): in cool mode but heating threshold change requested; overriding', this.accessory.displayName);
+       this.handleTargetHeaterCoolingThresholdTemperatureSet(value, callback);
+       return;
+    }
 
     if(value>maxHeatSetpoint) {
       value = maxHeatSetpoint;
