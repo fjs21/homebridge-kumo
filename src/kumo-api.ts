@@ -173,7 +173,7 @@ export class KumoApi {
   }
 
   private parseChildren(this, children): number {
-    var newDevicesCount = 0;
+    let newDevicesCount = 0;
     
     this.log.debug('Parsing child: %s', util.inspect(children, { colors: true, sorted: true, depth: 3 }));
     for (const child of children) {
@@ -213,7 +213,7 @@ export class KumoApi {
   }
 
   // Refresh the security token.
-  private async checkSecurityToken(forceRefresh: boolean = false): Promise<boolean> {
+  private async checkSecurityToken(forceRefresh = false): Promise<boolean> {
     const now = Date.now();
 
     // If we don't have a security token yet, acquire one directly.
@@ -434,7 +434,7 @@ export class KumoApi {
   }
 
   // sends request
-  private async directRequest(post_data: string, serial: string, attempt_number: number = 0) {
+  private async directRequest(post_data: string, serial: string, attempt_number = 0) {
     let zoneTable; 
     for (const device of this.devices) {
       if (device.serial === serial){
