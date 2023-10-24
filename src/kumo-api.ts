@@ -84,7 +84,6 @@ export class KumoApi {
   private securityToken!: string;
   private securityTokenTimestamp!: number;
   private lastAuthenticateCall!: number;
-  private lastRefreshDevicesCall!: number;
 
   private log: Logger;
 
@@ -157,14 +156,10 @@ export class KumoApi {
       return false;
     }
 
-    // On initial plugin startup, let the user know we've successfully connected.
-    if(!this.securityToken) {
-      this.log.info('Kumo API: Successfully connected to the Kumo API.');
-      // Find devices and serial numbers
-      this.devices = [];
-      this.parseChildren(data[2].children);
-      this.log.info('Number of devices found:', this.devices.length);
-    }
+    //Update devices
+    this.log.info('Kumo API: Successfully connected to the Kumo API.');
+    const newDeviceCount = this.parseChildren(data[2].children);
+    this.log.info('Number of devices found:', newDeviceCount);
 
     this.securityToken = data[0].token;
     this.securityTokenTimestamp = now;
@@ -177,7 +172,9 @@ export class KumoApi {
     return true;
   }
 
-  private parseChildren(this, children) {
+  private parseChildren(this, children): number {
+    let newDevicesCount = 0;
+    
     this.log.debug('Parsing child: %s', util.inspect(children, { colors: true, sorted: true, depth: 3 }));
     for (const child of children) {
       const zoneTable = child.zoneTable;
@@ -189,27 +186,43 @@ export class KumoApi {
           label: zoneTable[serial].label,
           zoneTable: zoneTable[serial],
         };
-        this.log.info('Found device. Serial: %s. Label: %s', device.serial, device.label);
-        this.devices.push(device);
+        let existingDeviceIndex: string|number|undefined = undefined;
+        for (const anExistingDeviceIndex in this.devices) {
+          if (this.devices[anExistingDeviceIndex].serial === device.serial) {
+            existingDeviceIndex = anExistingDeviceIndex;
+            break;
+          }
+        }
+
+        if (existingDeviceIndex !== undefined) {
+          this.log.info('Updated existing device. Serial: %s. Label: %s', device.serial, device.label);
+          this.devices[existingDeviceIndex] = device;
+        } else {
+          this.log.info('Found device. Serial: %s. Label: %s', device.serial, device.label);
+          this.devices.push(device);
+          newDevicesCount += 1;
+        }
       }
 
       if(Object.prototype.hasOwnProperty.call(child, 'children')){
-        this.parseChildren(child.children);
+        newDevicesCount += this.parseChildren(child.children);
       }
     }
+
+    return newDevicesCount;
   }
 
   // Refresh the security token.
-  private async checkSecurityToken(): Promise<boolean> {
+  private async checkSecurityToken(forceRefresh = false): Promise<boolean> {
     const now = Date.now();
 
-    // If we don't have a security token yet, acquire one before proceeding.
-    if(!this.securityToken && !(await this.acquireSecurityToken())) {
-      return false;
+    // If we don't have a security token yet, acquire one directly.
+    if(!this.securityToken) {
+      return await this.acquireSecurityToken();
     }
 
     // Is it time to refresh? If not, we're good for now.
-    if((now - this.securityTokenTimestamp) < KumoTokenExpirationWindow) {
+    if(!forceRefresh && (now - this.securityTokenTimestamp) < KumoTokenExpirationWindow) {
       return true;
     }
 
@@ -222,12 +235,7 @@ export class KumoApi {
 
     this.log.info('Kumo API: acquiring a new security token.');
 
-    // Now generate a new security token.
-    if(!(await this.acquireSecurityToken())) {
-      return false;
-    }
-
-    return true;
+    return (await this.acquireSecurityToken());
   }
 
   async queryDevice(serial: string) {
@@ -426,7 +434,7 @@ export class KumoApi {
   }
 
   // sends request
-  private async directRequest(post_data: string, serial: string) {
+  private async directRequest(post_data: string, serial: string, attempt_number = 0) {
     let zoneTable; 
     for (const device of this.devices) {
       if (device.serial === serial){
@@ -464,11 +472,19 @@ export class KumoApi {
     } catch(error) {
       // if fetch throws error 
       this.log.warn('queryDevice_Direct error: %s.', error);
+      if(attempt_number < 2 && (await this.checkSecurityToken(true))) {
+        return this.directRequest(post_data, serial, attempt_number + 1);
+      }
+
       return null;  
     }
     
     if (!data || data == '{ _api_error: \'device_authentication_error\' }') {
       this.log.warn('Kumo API: error direct querying device: %s.', serial);
+      if(attempt_number < 2 && (await this.checkSecurityToken(true))) {
+        return this.directRequest(post_data, serial, attempt_number + 1);
+      }
+
       return null;
     }
 
