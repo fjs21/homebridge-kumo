@@ -185,6 +185,7 @@ export class KumoApi {
           serial: serial,
           label: zoneTable[serial].label,
           zoneTable: zoneTable[serial],
+          overrideAddress: null,
         };
         let existingDeviceIndex: string|number|undefined = undefined;
         for (const anExistingDeviceIndex in this.devices) {
@@ -436,12 +437,14 @@ export class KumoApi {
   // sends request
   private async directRequest(post_data: string, serial: string, attempt_number = 0) {
     let zoneTable; 
+    let overrideAddress;
     for (const device of this.devices) {
       if (device.serial === serial){
         zoneTable = device.zoneTable;
+        overrideAddress = device.overrideAddress;
       }
     }
-    const address: string = zoneTable.address;
+    const address: string = overrideAddress ?? zoneTable.address;
     const cryptoSerial: string = zoneTable.cryptoSerial; 
     const password: string = zoneTable.password; 
     
