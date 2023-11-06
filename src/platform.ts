@@ -80,7 +80,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     // loop over the discovered devices and register each one if it has not already been registered
-    for (let device of this.kumo.devices) {
+    for (const device of this.kumo.devices) {
 
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
@@ -307,9 +307,9 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
     // We've explicitly set an address for this device.
     for (const configOption of this.config.options) {
-        if(configOption.startsWith('Address.' + (device.serial) + '=')) {
-            return configOption.split('=')[1];
-        }
+      if(configOption.startsWith('Address.' + (device.serial) + '=')) {
+        return configOption.split('=')[1];
+      }
     }
       
     // If we don't have a zoneTable label, we're done here.
@@ -319,9 +319,9 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
 
     // We've explicitly set an address for the zoneTable label this device is attached to.
     for (const configOption of this.config.options) {
-        if(configOption.startsWith('Address.' + (device.label) + '=')) {
-            return configOption.split('=')[1];
-        }
+      if(configOption.startsWith('Address.' + (device.label) + '=')) {
+        return configOption.split('=')[1];
+      }
     }
 
     // Nothing special to do - return default.
