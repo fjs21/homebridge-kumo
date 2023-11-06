@@ -463,7 +463,7 @@ export class KumoApi {
         headers: {'Accept': 'application/json, text/plain, */*',
           'Content-Type': 'application/json'},
         body: post_data,
-      }, 2000, 'Time out on local IP connection.');
+      }, 2000, 'Time out on local IP connection to ' + address + '.');
       // check response from server
       if (response.status >= 200 && response.status <= 299) {
         data = await response.json();
