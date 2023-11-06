@@ -80,7 +80,7 @@ export class KumoHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of this.kumo.devices) {
+    for (let device of this.kumo.devices) {
 
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
