@@ -197,7 +197,8 @@ export class KumoApi {
 
         if (existingDeviceIndex !== undefined) {
           this.log.info('Updated existing device. Serial: %s. Label: %s', device.serial, device.label);
-          this.devices[existingDeviceIndex] = device;
+          this.devices[existingDeviceIndex].label = device.label;
+          this.devices[existingDeviceIndex].zoneTable = device.zoneTable;
         } else {
           this.log.info('Found device. Serial: %s. Label: %s', device.serial, device.label);
           this.devices.push(device);
