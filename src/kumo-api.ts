@@ -471,6 +471,9 @@ export class KumoApi {
       } else {
         this.log.warn('Kumo API: response error from device: %d %s',
           response.status, response.statusText);
+        if(attempt_number < 2 && (await this.checkSecurityToken(true))) {
+          return this.directRequest(post_data, serial, attempt_number + 1);
+        }
         return null; 
       } 
     } catch(error) {
@@ -483,8 +486,8 @@ export class KumoApi {
       return null;  
     }
     
-    if (!data || data == '{ _api_error: \'device_authentication_error\' }') {
-      this.log.warn('Kumo API: error direct querying device: %s.', serial);
+    if(!data || '_api_error' in data) {
+      this.log.warn('Kumo API: error direct querying device: %s; %s.', serial, data);
       if(attempt_number < 2 && (await this.checkSecurityToken(true))) {
         return this.directRequest(post_data, serial, attempt_number + 1);
       }
